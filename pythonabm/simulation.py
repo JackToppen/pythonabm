@@ -6,7 +6,7 @@ import math
 import psutil
 from abc import ABC, abstractmethod
 
-from pythonabm.backend import *
+from .backend import *
 
 
 class Simulation(ABC):
@@ -41,7 +41,6 @@ class Simulation(ABC):
         self.size = [1000, 1000, 0]
         self.output_values = True
         self.output_images = True
-        self.record_initial_step = False
         self.image_quality = 2000
         self.video_quality = 1000
         self.fps = 10
@@ -427,21 +426,6 @@ class Simulation(ABC):
         print("Step: " + str(self.current_step))
         print("Number of agents: " + str(self.number_agents))
 
-    def step_methods(self):
-        """ Controls the order in which simulation methods are called.
-        """
-        # begins the step by printing out information and holding the start time
-        self.info()
-
-        # call the user-defined method for calls to additional simulation methods
-        self.step()
-
-        # call default outputs
-        self.step_image()
-        self.step_values()
-        self.temp()
-        self.data()
-
     def random_vector(self):
         """ Computes a random vector on the unit sphere centered
             at the origin.
@@ -473,35 +457,30 @@ class Simulation(ABC):
         """ Configures/runs the model based on the specified
             simulation mode.
         """
-        output_dir = check_output_dir(output_dir)    # read paths.yaml to get/make the output directory
-        name, mode = get_name_mode()    # get the name/mode of the simulation
+        # check that the output directory exists and get the starting parameters for the model
+        output_dir = check_output_dir(output_dir)
+        name, mode, final_step = starting_params()
 
         # new simulation
         if mode == 0:
-            # check that new simulation can be made and make the simulation
-            name = check_new_sim(name, output_dir)
+            # check that new simulation can be made and create the Simulation object
+            name = check_existing(name, output_dir, new_simulation=True)
             sim = cls(name, output_dir)
 
             # copy model files to simulation directory, ignoring __pycache__ files
-            shutil.copytree(os.getcwd(), sim.main_path + name + "_copy", ignore=shutil.ignore_patterns("__pycache__"))
+            direc_path = sim.main_path + name + "_copy"
+            shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__"))
 
-            # initialize agents and if desired, record initial values
+            # set up the simulation, run the steps, and create a video from any images
             sim.setup()
-            if sim.record_initial_step:
-                sim.step_values()
-                sim.step_image()
-
-            # iterate through all steps
             for sim.current_step in range(1, sim.end_step + 1):
-                sim.step_methods()
-
-            # create video from step images
+                sim.step()
             sim.create_video()
 
         # previous simulation
         else:
             # check that previous simulation exists
-            name = check_previous_sim(name, output_dir)
+            name = check_existing(name, output_dir, new_simulation=False)
 
             # continuation
             if mode == 1:
@@ -510,16 +489,14 @@ class Simulation(ABC):
                 with open(file_name, "rb") as file:
                     sim = pickle.load(file)
 
-                # iterate through all steps
-                for sim.current_step in range(sim.current_step + 1, get_final_step() + 1):
-                    sim.step_methods()
-
-                # create video from step images
+                # iterate through all steps and create a video from any images
+                for sim.current_step in range(sim.current_step + 1, final_step + 1):
+                    sim.step()
                 sim.create_video()
 
             # images to video
             elif mode == 2:
-                # create instance for video/path information and make video
+                # make object for video/path information and create video
                 sim = cls(name, output_dir)
                 sim.create_video()
 

@@ -51,7 +51,7 @@ def assign_bins_jit(number_agents, bin_locations, bins, bins_help, max_agents):
 
 
 @cuda.jit(device=True)
-def magnitude(vector_1, vector_2):
+def cuda_magnitude(vector_1, vector_2):
     """ This just-in-time compiled CUDA kernel is a device
         function for calculating the distance between vectors.
     """
@@ -93,7 +93,7 @@ def get_neighbors_gpu(locations, bin_locations, bins, bins_help, distance, edges
                         current = bins[x + i][y + j][z + k][l]
 
                         # check to see if the agent is a neighbor and prevent duplicates with index condition
-                        if magnitude(locations[index], locations[current]) <= distance[0] and index < current:
+                        if cuda_magnitude(locations[index], locations[current]) <= distance[0] and index < current:
                             # if there is room, add the edge
                             if agent_edge_count < max_neighbors[0]:
                                 # get the index for the edge
@@ -274,9 +274,9 @@ def check_output_dir(output_dir):
     return output_dir
 
 
-def get_name_mode():
-    """ Returns the name and mode for the simulation either from
-        the commandline or a text-based UI.
+def starting_params():
+    """ Returns the name, mode, and final step (continuation) for the simulation
+        either from the commandline or a text-based UI.
     """
     # try to get the name from the commandline, otherwise run the text-based UI
     try:
@@ -309,90 +309,85 @@ def get_name_mode():
                 except ValueError:
                     print("\nInput: \"mode\" should be an integer.\n")
 
-    return name, mode
+    # if continuation mode, try to get the final step from the commandline, otherwise run the text-based UI
+    if mode == 1:
+        try:
+            final_step = commandline_param("-fs", int)
+        except Exception:
+            while True:
+                # prompt user for final step
+                final_step = input("What is the final step of this continued simulation? Type \"help\" for more"
+                                   " information: ")
+
+                # keep running if "help" is typed
+                if final_step == "help":
+                    print("\nEnter the new step number that will be the last step of the simulation.\n")
+                else:
+                    # make sure final step is an integer
+                    try:
+                        final_step = int(final_step)
+                        print()
+                        break
+                    except ValueError:
+                        print("Input: \"final step\" should be an integer.\n")
+    else:
+        final_step = None
+
+    return name, mode, final_step
 
 
-def get_final_step():
-    """ Gets the new last step of the simulation if using continuation
-        mode for the simulation.
+def check_existing(name, output_path, new_simulation=True):
+    """ Based on the mode, checks to see if an existing simulation
+        in the output path has the same name.
     """
-    # try to get the final step from the commandline, otherwise run the text-based UI
-    try:
-        final_step = commandline_param("-fs", int)
-    except Exception:
+    # if running a new simulation
+    if new_simulation:
         while True:
-            # prompt user for final step
-            final_step = input("What is the final step of this continued simulation? Type \"help\" for more"
-                               " information: ")
-
-            # keep running if "help" is typed
-            if final_step == "help":
-                print("\nEnter the new step number that will be the last step of the simulation.\n")
-            else:
-                # make sure final step is an integer
-                try:
-                    final_step = int(final_step)
-                    print()
-                    break
-                except ValueError:
-                    print("Input: \"final step\" should be an integer.\n")
-
-    return final_step
-
-
-def check_new_sim(name, output_path):
-    """ Makes sure a new simulation doesn't overwrite existing
-        simulation.
-    """
-    while True:
-        # see if the directory exists
-        if os.path.isdir(output_path + name):
-            # get user input for overwriting previous simulation
-            print("Simulation already exists with name: " + name)
-            user = input("Would you like to overwrite that simulation? (y/n): ")
-            print()
-
-            # if not overwriting, get new name
-            if user == "n":
-                name = input("New name: ")
+            # see if the directory exists
+            if os.path.isdir(output_path + name):
+                # get user input for overwriting previous simulation
+                print("Simulation already exists with name: " + name)
+                user = input("Would you like to overwrite that simulation? (y/n): ")
                 print()
 
-            # otherwise delete all files/folders in previous directory
-            elif user == "y":
-                # clear current directory to prevent another possible future errors
-                files = os.listdir(output_path + name)
-                for file in files:
-                    # path to each file/folder
-                    path = output_path + name + os.path.sep + file
-                    if os.path.isfile(path):
-                        os.remove(path)
-                    else:
-                        shutil.rmtree(path)
+                # if not overwriting, get new name
+                if user == "n":
+                    name = input("New name: ")
+                    print()
+
+                # otherwise delete all files/folders in previous directory
+                elif user == "y":
+                    # clear current directory to prevent another possible future errors
+                    files = os.listdir(output_path + name)
+                    for file in files:
+                        # path to each file/folder
+                        path = output_path + name + os.path.sep + file
+                        if os.path.isfile(path):
+                            os.remove(path)
+                        else:
+                            shutil.rmtree(path)
+                    break
+                else:
+                    # inputs should either be "y" or "n"
+                    print("Either type \"y\" or \"n\"")
+
+            # if does not exist, make directory
+            else:
+                os.mkdir(output_path + name)
+                break
+
+    # if using an existing simulation
+    else:
+        while True:
+            # break the loop if the simulation exists, otherwise try to get correct name
+            if os.path.isdir(output_path + name):
                 break
             else:
-                # inputs should either be "y" or "n"
-                print("Either type \"y\" or \"n\"")
+                print("No directory exists with name/path: " + output_path + name)
+                name = input("\nPlease type the correct name of the simulation or type \"exit\" to exit: ")
+                print()
+                if name == "exit":
+                    exit()
 
-        # if does not exist, make directory
-        else:
-            os.mkdir(output_path + name)
-            break
-
-    return name
-
-
-def check_previous_sim(name, output_path):
-    """ Makes sure that a previous simulation exists.
-    """
-    while True:
-        # break the loop if the simulation exists, otherwise try to get correct name
-        if os.path.isdir(output_path + name):
-            break
-        else:
-            print("No directory exists with name/path: " + output_path + name)
-            name = input("\nPlease type the correct name of the simulation or type \"exit\" to exit: ")
-            print()
-            if name == "exit":
-                exit()
-
+    # return correct simulation name
     return name
