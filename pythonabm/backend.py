@@ -2,7 +2,7 @@ import numpy as np
 import time
 import os
 import sys
-import yaml
+# import yaml
 import shutil
 import re
 import igraph

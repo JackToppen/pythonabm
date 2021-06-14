@@ -27,8 +27,14 @@ class Simulation(ABC):
         self.number_agents = 0
         self.current_step = 0
 
+        # make default arrays for the following agent values
+        self.locations = np.zeros((0, 3), dtype=float)
+        self.radii = np.ones(0, dtype=float)
+        self.hatching = np.zeros(0, dtype=bool)
+        self.removing = np.zeros(0, dtype=bool)
+
         # hold the names of the agent arrays and the names of any graphs (each agent is a node)
-        self.agent_array_names = list()
+        self.agent_array_names = ["locations", "radii", "hatching", "removing"]
         self.graph_names = list()
 
         # store the runtimes of methods with @record_time decorator
@@ -68,6 +74,12 @@ class Simulation(ABC):
         begin = self.number_agents
         self.number_agents += number
 
+        # extend the default arrays to the new number of agents
+        self.locations = np.concatenate((self.locations, np.zeros((number, 3), dtype=float)), axis=0)
+        self.radii = np.concatenate((self.radii, np.ones(number, dtype=float)))
+        self.hatching = np.concatenate((self.hatching, np.zeros(number, dtype=bool)))
+        self.removing = np.concatenate((self.removing, np.zeros(number, dtype=bool)))
+
         # if an agent type is passed
         if agent_type is not None:
             # make sure holder for types exists
@@ -97,12 +109,14 @@ class Simulation(ABC):
             # create instance variable and add array name to holder
             else:
                 self.__dict__[array_name] = override
-                self.agent_array_names.append(array_name)
+                if array_name not in self.agent_array_names:
+                    self.agent_array_names.append(array_name)
 
         # otherwise check if instance variable exists and try to make new array
         elif not hasattr(self, array_name):
             # add array name to holder
-            self.agent_array_names.append(array_name)
+            if array_name not in self.agent_array_names:
+                self.agent_array_names.append(array_name)
 
             # get the dimensions of the array
             if vector is None:
@@ -425,6 +439,71 @@ class Simulation(ABC):
         # current step and number of agents
         print("Step: " + str(self.current_step))
         print("Number of agents: " + str(self.number_agents))
+
+    def mark_to_hatch(self, index):
+        """ Mark the corresponding index of the array with True to
+            indicate that the agent should hatch a new agent.
+        """
+        self.hatching[index] = True
+
+    def mark_to_remove(self, index):
+        """ Mark the corresponding index of the array with True to
+            indicate that the agent should be removed.
+        """
+        self.removing[index] = True
+
+    def hatch_agents(self):
+        """ Adds new agents from the simulation that mirror the values of
+            the hatching agents.
+        """
+        # get indices of the hatching agents with Boolean mask and count how many added
+        indices = np.arange(self.number_agents)[self.hatching]
+        num_added = len(indices)
+
+        # go through the agent arrays and add indices
+        for name in self.agent_array_names:
+            # copy the indices of the agent array data for the hatching agents
+            copies = self.__dict__[name][indices]
+
+            # add the copies to the end of the array, handle if the array is 1-dimensional or 2-dimensional
+            if self.__dict__[name].ndim == 1:
+                self.__dict__[name] = np.concatenate((self.__dict__[name], copies))
+            else:
+                self.__dict__[name] = np.concatenate((self.__dict__[name], copies), axis=0)
+
+        # go through each graph, adding one new vertex at a time
+        for graph_name in self.graph_names:
+            self.__dict__[graph_name].add_vertices(num_added)
+
+        # change total number of agents, print to terminal, and clear the hatching agent array
+        self.number_agents += num_added
+        print("\tAdded " + str(num_added) + " agents")
+        self.hatching[:] = False
+
+    def remove_agents(self):
+        """ Removes agents from the simulation that have been marked
+            to be removed.
+        """
+        # get indices of agents to remove with a Boolean mask and count how many removed
+        indices = np.arange(self.number_agents)[self.removing]
+        num_removed = len(indices)
+
+        # go through the agent arrays and remove the indices
+        for name in self.agent_array_names:
+            # if the array is 1-dimensional, otherwise 2-dimensional
+            if self.__dict__[name].ndim == 1:
+                self.__dict__[name] = np.delete(self.__dict__[name], indices)
+            else:
+                self.__dict__[name] = np.delete(self.__dict__[name], indices, axis=0)
+
+        # remove the indices from each graph
+        for graph_name in self.graph_names:
+            self.__dict__[graph_name].delete_vertices(indices)
+
+        # change total number of agents, print to terminal, and clear the hatching agent array
+        self.number_agents -= num_removed
+        print("\tRemoved " + str(num_removed) + " agents")
+        self.removing[:] = False
 
     def random_vector(self):
         """ Computes a random vector on the unit sphere centered
