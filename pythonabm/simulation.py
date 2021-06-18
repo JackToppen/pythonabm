@@ -452,57 +452,41 @@ class Simulation(ABC):
         """
         self.removing[index] = True
 
-    def hatch_agents(self):
-        """ Adds new agents from the simulation that mirror the values of
-            the hatching agents.
+    @record_time
+    def update_populations(self):
+        """ Adds/removes agents to/from the simulation by adding/removing
+            indices from the cell arrays and any graphs.
         """
-        # get indices of the hatching agents with Boolean mask and count how many added
-        indices = np.arange(self.number_agents)[self.hatching]
-        num_added = len(indices)
+        # get indices of hatching/dying agents with Boolean mask
+        add_indices = np.arange(self.number_agents)[self.hatching]
+        remove_indices = np.arange(self.number_agents)[self.removing]
 
-        # go through the agent arrays and add indices
+        # count how many added/removed agents
+        num_added = len(add_indices)
+        num_removed = len(remove_indices)
+
+        # go through each agent array name
         for name in self.agent_array_names:
             # copy the indices of the agent array data for the hatching agents
-            copies = self.__dict__[name][indices]
+            copies = self.__dict__[name][add_indices]
 
-            # add the copies to the end of the array, handle if the array is 1-dimensional or 2-dimensional
-            if self.__dict__[name].ndim == 1:
-                self.__dict__[name] = np.concatenate((self.__dict__[name], copies))
-            else:
-                self.__dict__[name] = np.concatenate((self.__dict__[name], copies), axis=0)
+            # add/remove agent data to/from the arrays
+            self.__dict__[name] = np.concatenate((self.__dict__[name], copies), axis=0)
+            self.__dict__[name] = np.delete(self.__dict__[name], remove_indices, axis=0)
 
-        # go through each graph, adding one new vertex at a time
+        # go through each graph name
         for graph_name in self.graph_names:
+            # add/remove vertices from the graph
             self.__dict__[graph_name].add_vertices(num_added)
+            self.__dict__[graph_name].delete_vertices(remove_indices)
 
-        # change total number of agents, print to terminal, and clear the hatching agent array
-        self.number_agents += num_added
+        # change total number of agents and print info to terminal
+        self.number_agents += num_added - num_removed
         print("\tAdded " + str(num_added) + " agents")
-        self.hatching[:] = False
-
-    def remove_agents(self):
-        """ Removes agents from the simulation that have been marked
-            to be removed.
-        """
-        # get indices of agents to remove with a Boolean mask and count how many removed
-        indices = np.arange(self.number_agents)[self.removing]
-        num_removed = len(indices)
-
-        # go through the agent arrays and remove the indices
-        for name in self.agent_array_names:
-            # if the array is 1-dimensional, otherwise 2-dimensional
-            if self.__dict__[name].ndim == 1:
-                self.__dict__[name] = np.delete(self.__dict__[name], indices)
-            else:
-                self.__dict__[name] = np.delete(self.__dict__[name], indices, axis=0)
-
-        # remove the indices from each graph
-        for graph_name in self.graph_names:
-            self.__dict__[graph_name].delete_vertices(indices)
-
-        # change total number of agents, print to terminal, and clear the hatching agent array
-        self.number_agents -= num_removed
         print("\tRemoved " + str(num_removed) + " agents")
+
+        # clear the hatching/removing arrays for the next step
+        self.hatching[:] = False
         self.removing[:] = False
 
     def random_vector(self):
