@@ -13,15 +13,9 @@ class Simulation(ABC):
     """ This class makes sure any subclasses have the necessary
         attributes to run a simulation.
     """
-    def __init__(self, name, output_path):
-        # set name and separator
-        self.name = name
-        self.separator = os.path.sep
-
-        # make the following paths
-        self.main_path = output_path + self.name + self.separator    # path to main simulation directory
-        self.images_path = self.main_path + name + "_images" + self.separator    # path to images output directory
-        self.values_path = self.main_path + name + "_values" + self.separator    # path to CSV output directory
+    def __init__(self):
+        # hold name, which will be overridden
+        self.name = None
 
         # hold the running number of agents and the step to begin at (updated by continuation mode)
         self.number_agents = 0
@@ -515,6 +509,14 @@ class Simulation(ABC):
         for key in list(params.keys()):
             self.__dict__[key] = params[key]
 
+    def set_paths(self, output_dir):
+        """ Updates simulation output paths.
+        """
+        separator = os.path.sep
+        self.main_path = output_dir + self.name + separator  # path to main simulation directory
+        self.images_path = self.main_path + self.name + "_images" + separator  # path to images output directory
+        self.values_path = self.main_path + self.name + "_values" + separator  # path to CSV output directory
+
     @classmethod
     def start(cls, output_dir):
         """ Configures/runs the model based on the specified
@@ -526,9 +528,13 @@ class Simulation(ABC):
 
         # new simulation
         if mode == 0:
-            # check that new simulation can be made and create the Simulation object
+            # first check that new simulation can be made and create simulation output directory
             name = check_existing(name, output_dir, new_simulation=True)
-            sim = cls(name, output_dir)
+
+            # now make simulation instance, update name, and add paths
+            sim = cls()
+            sim.name = name
+            sim.set_paths(output_dir)
 
             # copy model files to simulation directory, ignoring __pycache__ files
             direc_path = sim.main_path + name + "_copy"
@@ -552,6 +558,9 @@ class Simulation(ABC):
                 with open(file_name, "rb") as file:
                     sim = pickle.load(file)
 
+                # update paths for the case the simulation is move to new folder
+                sim.set_paths(output_dir)
+
                 # iterate through all steps and create a video from any images
                 for sim.current_step in range(sim.current_step + 1, final_step + 1):
                     sim.step()
@@ -560,7 +569,9 @@ class Simulation(ABC):
             # images to video
             elif mode == 2:
                 # make object for video/path information and create video
-                sim = cls(name, output_dir)
+                sim = cls()
+                sim.name = name
+                sim.set_paths(output_dir)
                 sim.create_video()
 
             # zip simulation output

@@ -1,0 +1,28 @@
+# How many agents to begin the simulation? Ex. 1000
+num_to_start: 1000
+
+# Do you want to use NVIDIA CUDA acceleration for some computationally tasking methods? Ex. True
+cuda: False
+
+# What will the final step number be? Use for when you are beginning a new simulation (mode: 0). Ex. 192
+end_step: 50
+
+# What are the dimensions (xyz) of the space? Ex. [4000, 4000, 0]
+size: [1000, 1000, 0]
+
+# Do you want the agent array values outputted to a CSV at each step? Ex. True
+output_values: True
+
+# Do you want an image produced at each step and a video at the end of the simulation? Ex. True
+output_images: True
+
+# What is the image width in pixels? Currently imaging is supported for a 2D space, though a 3D space will yield
+# a bird's eye view of the space. Image slicing/3D images to come... Ex. 2000
+image_quality: 2000
+
+# What is the video width in pixels? This will scale the step images to the video resolution
+# (combined with interpolation) to potentially reduce the file size of the video. Ex. 1000
+video_quality: 1000
+
+# What should the frames-per-second (FPS) of the resulting video comprised of step images be? Ex. 10.0
+fps: 10
