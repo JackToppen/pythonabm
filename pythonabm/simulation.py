@@ -513,6 +513,7 @@ class Simulation(ABC):
         """ Updates simulation output paths.
         """
         separator = os.path.sep
+        self.output_path = output_dir + separator  # path to output directory
         self.main_path = output_dir + self.name + separator  # path to main simulation directory
         self.images_path = self.main_path + self.name + "_images" + separator  # path to images output directory
         self.values_path = self.main_path + self.name + "_values" + separator  # path to CSV output directory
