@@ -55,6 +55,11 @@ class TestSimulation(Simulation):
         self.temp()
         self.data()
 
+    def end(self):
+        """ Overrides the end() method from the Simulation class.
+        """
+        self.create_video()
+
     @record_time
     def die(self):
         """ Updates an agent based on the presence of neighbors.

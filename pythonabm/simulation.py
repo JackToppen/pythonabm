@@ -57,6 +57,12 @@ class Simulation(ABC):
         """
         pass
 
+    def end(self):
+        """ Specify any methods that are called after all the simulations
+            steps have run.
+        """
+        self.create_video()
+
     def add_agents(self, number, agent_type=None):
         """ Adds number of agents to the simulation potentially with agent_type marker.
 
@@ -427,9 +433,6 @@ class Simulation(ABC):
         """ Records start time of the step for measuring efficiency and
             prints out info about the simulation.
         """
-        # time.perf_counter() is more accurate than time.time()
-        self.step_start = time.perf_counter()
-
         # current step and number of agents
         print("Step: " + str(self.current_step))
         print("Number of agents: " + str(self.number_agents))
@@ -518,6 +521,21 @@ class Simulation(ABC):
         self.images_path = self.main_path + self.name + "_images" + separator  # path to images output directory
         self.values_path = self.main_path + self.name + "_values" + separator  # path to CSV output directory
 
+    def run_simulation(self):
+        """ Defines how a simulation is run and what code is run after
+            the simulation.
+        """
+        # run through each of the steps
+        for self.current_step in range(self.current_step + 1, self.end_step + 1):
+            # record the starting time of the step
+            self.step_start = time.perf_counter()
+
+            # call the step methods
+            self.step()
+
+        # run any methods at the end
+        self.end()
+
     @classmethod
     def start(cls, output_dir):
         """ Configures/runs the model based on the specified
@@ -525,7 +543,7 @@ class Simulation(ABC):
         """
         # check that the output directory exists and get the starting parameters for the model
         output_dir = check_output_dir(output_dir)
-        name, mode, final_step = starting_params()
+        name, mode, end_step = starting_params()    # end step is only for continuation mode
 
         # new simulation
         if mode == 0:
@@ -541,11 +559,9 @@ class Simulation(ABC):
             direc_path = sim.main_path + name + "_copy"
             shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__"))
 
-            # set up the simulation, run the steps, and create a video from any images
+            # set up the simulation and run the simulation
             sim.setup()
-            for sim.current_step in range(1, sim.end_step + 1):
-                sim.step()
-            sim.create_video()
+            sim.run_simulation()
 
         # previous simulation
         else:
@@ -562,10 +578,9 @@ class Simulation(ABC):
                 # update paths for the case the simulation is move to new folder
                 sim.set_paths(output_dir)
 
-                # iterate through all steps and create a video from any images
-                for sim.current_step in range(sim.current_step + 1, final_step + 1):
-                    sim.step()
-                sim.create_video()
+                # update the end step and run the simulation
+                sim.end_step = end_step
+                sim.run_simulation()
 
             # images to video
             elif mode == 2:
