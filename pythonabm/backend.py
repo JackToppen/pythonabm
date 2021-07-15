@@ -275,7 +275,7 @@ def check_output_dir(output_dir):
 
 
 def starting_params():
-    """ Returns the name, mode, and end step (continuation) for the simulation
+    """ Returns the name and mode for the simulation
         either from the commandline or a text-based UI.
     """
     # try to get the name from the commandline, otherwise run the text-based UI
@@ -309,31 +309,34 @@ def starting_params():
                 except ValueError:
                     print("\nInput: \"mode\" should be an integer.\n")
 
-    # if continuation mode, try to get the final step from the commandline, otherwise run the text-based UI
-    if mode == 1:
-        try:
-            end_step = commandline_param("-es", int)
-        except Exception:
-            while True:
-                # prompt user for final step
-                final_step = input("What is the final step of this continued simulation? Type \"help\" for more"
-                                   " information: ")
+    return name, mode
 
-                # keep running if "help" is typed
-                if end_step == "help":
-                    print("\nEnter the new step number that will be the last step of the simulation.\n")
-                else:
-                    # make sure final step is an integer
-                    try:
-                        final_step = int(final_step)
-                        print()
-                        break
-                    except ValueError:
-                        print("Input: \"final step\" should be an integer.\n")
-    else:
-        end_step = None
 
-    return name, mode, end_step
+def get_end_step():
+    """ If using the continuation mode, get the last step
+        number for the simulation.
+    """
+    try:
+        end_step = commandline_param("-es", int)
+    except Exception:
+        while True:
+            # prompt user for end step
+            end_step = input("What is the last step number of this continued simulation? Type \"help\" for more"
+                             " information: ")
+
+            # keep running if "help" is typed
+            if end_step == "help":
+                print("\nEnter the new step number that will be the last step of the simulation.\n")
+            else:
+                # make sure end step is an integer
+                try:
+                    end_step = int(end_step)
+                    print()
+                    break
+                except ValueError:
+                    print("Input: \"last step\" should be an integer.\n")
+
+    return end_step
 
 
 def check_existing(name, output_path, new_simulation=True):

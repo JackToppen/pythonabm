@@ -35,9 +35,6 @@ class TestSimulation(Simulation):
     def step(self):
         """ Overrides the step() method from the Simulation class.
         """
-        # prints info about the current step and records the starting time of the step
-        self.info()
-
         # get all neighbors within radius of 2
         self.get_neighbors("neighbor_graph", 5)
 
@@ -48,12 +45,6 @@ class TestSimulation(Simulation):
 
         # add/remove agents from the simulation
         self.update_populations()
-
-        # save multiple forms of information about the simulation at the current step
-        self.step_values()
-        self.step_image()
-        self.temp()
-        self.data()
 
     def end(self):
         """ Overrides the end() method from the Simulation class.

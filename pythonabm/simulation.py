@@ -430,8 +430,7 @@ class Simulation(ABC):
         print("\n\nDone!\n")
 
     def info(self):
-        """ Records start time of the step for measuring efficiency and
-            prints out info about the simulation.
+        """ Prints out info about the simulation.
         """
         # current step and number of agents
         print("Step: " + str(self.current_step))
@@ -515,7 +514,10 @@ class Simulation(ABC):
     def set_paths(self, output_dir):
         """ Updates simulation output paths.
         """
+        # get file separator
         separator = os.path.sep
+
+        # make the following paths
         self.output_path = output_dir + separator  # path to output directory
         self.main_path = output_dir + self.name + separator  # path to main simulation directory
         self.images_path = self.main_path + self.name + "_images" + separator  # path to images output directory
@@ -530,69 +532,103 @@ class Simulation(ABC):
             # record the starting time of the step
             self.step_start = time.perf_counter()
 
+            # prints info about the current step
+            self.info()
+
             # call the step methods
             self.step()
 
+            # save multiple forms of information about the simulation at the current step
+            self.step_values()
+            self.step_image()
+            self.temp()
+            self.data()
+
         # run any methods at the end
         self.end()
+
+    @classmethod
+    def simulation_mode_0(cls, name, output_dir):
+        """ Creates a new brand new simulation and runs it through
+            all defined steps.
+        """
+        # make simulation instance, update name, and add paths
+        sim = cls()
+        sim.name = name
+        sim.set_paths(output_dir)
+
+        # copy model files to simulation directory, ignoring __pycache__ files
+        direc_path = sim.main_path + name + "_copy"
+        shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__"))
+
+        # set up the simulation agents and run the simulation
+        sim.setup()
+        sim.run_simulation()
+
+    @staticmethod
+    def simulation_mode_1(name, output_dir):
+        """ Opens an existing simulation and runs it for a newly
+            specified number of steps.
+        """
+        # load previous simulation object from pickled temp file
+        file_name = output_dir + name + os.sep + name + "_temp.pkl"
+        with open(file_name, "rb") as file:
+            sim = pickle.load(file)
+
+        # update paths for the case the simulation is move to new folder
+        sim.set_paths(output_dir)
+
+        # update the end step and run the simulation
+        sim.end_step = get_end_step()
+        sim.run_simulation()
+
+    @classmethod
+    def simulation_mode_2(cls, name, output_dir):
+        """ Turns existing simulation images into a video.
+        """
+        # make simulation object for video/path information
+        sim = cls()
+        sim.name = name
+        sim.set_paths(output_dir)
+
+        # compile all simulation images into a video
+        sim.create_video()
+
+    @staticmethod
+    def simulation_mode_3(name, output_dir):
+        """ Archives existing simulation to a ZIP file.
+        """
+        # zip a copy of the folder and save it to the output directory
+        print("Compressing \"" + name + "\" simulation...")
+        shutil.make_archive(output_dir + name, "zip", root_dir=output_dir, base_dir=name)
+        print("Done!")
 
     @classmethod
     def start(cls, output_dir):
         """ Configures/runs the model based on the specified
             simulation mode.
         """
-        # check that the output directory exists and get the starting parameters for the model
+        # check that the output directory exists and get the name/mode for the simulation
         output_dir = check_output_dir(output_dir)
-        name, mode, end_step = starting_params()    # end step is only for continuation mode
+        name, mode = starting_params()
 
         # new simulation
         if mode == 0:
-            # first check that new simulation can be made and create simulation output directory
+            # first check that new simulation can be made and run that mode
             name = check_existing(name, output_dir, new_simulation=True)
+            cls.simulation_mode_0(name, output_dir)
 
-            # now make simulation instance, update name, and add paths
-            sim = cls()
-            sim.name = name
-            sim.set_paths(output_dir)
-
-            # copy model files to simulation directory, ignoring __pycache__ files
-            direc_path = sim.main_path + name + "_copy"
-            shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__"))
-
-            # set up the simulation and run the simulation
-            sim.setup()
-            sim.run_simulation()
-
-        # previous simulation
+        # existing simulation
         else:
             # check that previous simulation exists
             name = check_existing(name, output_dir, new_simulation=False)
 
-            # continuation
+            # call the corresponding mode
             if mode == 1:
-                # load previous simulation object from pickled file
-                file_name = output_dir + name + os.sep + name + "_temp.pkl"
-                with open(file_name, "rb") as file:
-                    sim = pickle.load(file)
-
-                # update paths for the case the simulation is move to new folder
-                sim.set_paths(output_dir)
-
-                # update the end step and run the simulation
-                sim.end_step = end_step
-                sim.run_simulation()
-
-            # images to video
+                cls.simulation_mode_1(name, output_dir)    # continuation
             elif mode == 2:
-                # make object for video/path information and create video
-                sim = cls()
-                sim.name = name
-                sim.set_paths(output_dir)
-                sim.create_video()
-
-            # zip simulation output
+                cls.simulation_mode_2(name, output_dir)    # images to video
             elif mode == 3:
-                # zip a copy of the folder and save it to the output directory
-                print("Compressing \"" + name + "\" simulation...")
-                shutil.make_archive(output_dir + name, "zip", root_dir=output_dir, base_dir=name)
-                print("Done!")
+                cls.simulation_mode_3(name, output_dir)    # archive simulation
+            else:
+                raise Exception("Mode does not exist!")
