@@ -538,12 +538,6 @@ class Simulation(ABC):
             # call the step methods
             self.step()
 
-            # save multiple forms of information about the simulation at the current step
-            self.step_values()
-            self.step_image()
-            self.temp()
-            self.data()
-
         # run any methods at the end
         self.end()
 
