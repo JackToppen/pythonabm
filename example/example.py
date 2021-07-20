@@ -46,6 +46,12 @@ class TestSimulation(Simulation):
         # add/remove agents from the simulation
         self.update_populations()
 
+        # get the following data
+        self.step_values()
+        self.step_image()
+        self.temp()
+        self.data()
+
     def end(self):
         """ Overrides the end() method from the Simulation class.
         """
