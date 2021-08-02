@@ -94,4 +94,4 @@ class TestSimulation(Simulation):
 
 
 if __name__ == "__main__":
-    TestSimulation.start("C:\\Research\\Outputs")
+    TestSimulation.start("C:\\Research\\ABM_outputs")
