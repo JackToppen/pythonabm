@@ -229,8 +229,8 @@ class Simulation(ABC):
 
                 # call the CUDA kernel, sending arrays to GPU
                 get_neighbors_gpu[bpg, tpb](cuda.to_device(self.locations), cuda.to_device(bin_locations),
-                                            cuda.to_device(bins), cuda.to_device(bins_help), cuda.to_device(distance),
-                                            edges, if_edge, edge_count, cuda.to_device(graph.max_neighbors))
+                                            cuda.to_device(bins), cuda.to_device(bins_help), distance, edges, if_edge,
+                                            edge_count, graph.max_neighbors)
 
                 # return the following arrays back from the GPU
                 edges = edges.copy_to_host()
