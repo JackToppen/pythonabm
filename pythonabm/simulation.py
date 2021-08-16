@@ -1,40 +1,38 @@
-import random as r
 import csv
 import cv2
-import pickle
 import math
+import pickle
 import psutil
+import random as r
 from abc import ABC, abstractmethod
 
 from .backend import *
 
 
 class Simulation(ABC):
-    """ This class makes sure any subclasses have the necessary
-        attributes to run a simulation.
+    """ This class defines the necessary behavior for any Simulation
+        subclass.
     """
     def __init__(self):
-        # hold name, which will be overridden
-        self.name = None
+        # hold simulation name (will be overridden)
+        self.name = "Trial"
 
-        # hold the running number of agents and the step to begin at (updated by continuation mode)
+        # hold the current number of agents and the step to begin at (updated by continuation mode)
         self.number_agents = 0
         self.current_step = 0
 
-        # make default arrays for the following agent values
-        self.locations = np.zeros((0, 3), dtype=float)
-        self.radii = np.ones(0, dtype=float)
-        self.hatching = np.zeros(0, dtype=bool)
-        self.removing = np.zeros(0, dtype=bool)
-
-        # hold the names of the agent arrays and the names of any graphs (each agent is a node)
-        self.agent_array_names = ["locations", "radii", "hatching", "removing"]
-        self.graph_names = list()
-
-        # store the runtimes of methods with @record_time decorator
+        # hold the real time start of the step in seconds and the total time for select methods
+        self.step_start = 0
         self.method_times = dict()
 
-        # default values for these often changed parameters
+        # hold the names of the agent arrays and the names of any graphs (each agent is a node)
+        self.agent_array_names = list()
+        self.graph_names = list()
+
+        # hold bounds for specifying types of agents that vary in initial values
+        self.agent_types = dict()
+
+        # default values which can be updated in the subclass
         self.num_to_start = 1000
         self.cuda = False
         self.end_step = 10
@@ -47,119 +45,60 @@ class Simulation(ABC):
 
     @abstractmethod
     def setup(self):
-        """ Initialized simulation agents.
+        """ Initialize the simulation prior to running the steps. Must
+            be overridden.
         """
         pass
 
     @abstractmethod
     def step(self):
         """ Specify which methods are called during the simulation step.
+            Must be overridden.
         """
         pass
 
     def end(self):
-        """ Specify any methods that are called after all the simulations
-            steps have run.
+        """ Specify any methods to be called after all the simulation
+            steps have run. Can be overridden.
         """
         self.create_video()
 
-    def add_agents(self, number, agent_type=None):
-        """ Adds number of agents to the simulation potentially with agent_type marker.
-
-            - number: the number of agents being added
-            - agent_type: string marker used to apply initial conditions to only these
-              agents
+    def set_paths(self, output_dir):
+        """ Updates simulation paths to various output directories.
         """
-        # determine bounds for array slice and increase total agents
-        begin = self.number_agents
-        self.number_agents += number
+        # get file separator
+        separator = os.path.sep
 
-        # extend the default arrays to the new number of agents
-        self.locations = np.concatenate((self.locations, np.zeros((number, 3), dtype=float)), axis=0)
-        self.radii = np.concatenate((self.radii, np.ones(number, dtype=float)))
-        self.hatching = np.concatenate((self.hatching, np.zeros(number, dtype=bool)))
-        self.removing = np.concatenate((self.removing, np.zeros(number, dtype=bool)))
+        # hold path to output directory and main simulation directory
+        self.output_path = output_dir
+        self.main_path = output_dir + self.name + separator
 
-        # if an agent type is passed
-        if agent_type is not None:
-            # make sure holder for types exists
-            if not hasattr(self, "agent_types"):
-                self.agent_types = dict()
+        # path to image and CSV directory
+        self.images_path = self.main_path + self.name + "_images" + separator
+        self.values_path = self.main_path + self.name + "_values" + separator
 
-            # set key value to tuple of the array slice
-            self.agent_types[agent_type] = (begin, self.number_agents)
-
-    def agent_array(self, array_name, agent_type=None, dtype=float, vector=None, func=None, override=None):
-        """ Adds an agent array to the simulation used to hold values for all agents.
-
-            - array_name: the name of the variable made for the agent array
-            - agent_type: string marker from add_agents()
-            - dtype: the data type of the array
-            - vector: if 2-dimensional, the length of the vector for each agent
-            - func: a function called for each index of the array to specify initial
-              parameters
-            - override: pass existing array instead of generating a new array
+    def info(self):
+        """ Prints out info about the simulation.
         """
-        # if using existing array
-        if override is not None:
-            # make sure array has correct length
-            if override.shape[0] != self.number_agents:
-                raise Exception("Length of override array does not match number of agents in simulation!")
+        # current step and number of agents
+        print("Step: " + str(self.current_step))
+        print("Number of agents: " + str(self.number_agents))
 
-            # create instance variable and add array name to holder
-            else:
-                self.__dict__[array_name] = override
-                if array_name not in self.agent_array_names:
-                    self.agent_array_names.append(array_name)
-
-        # otherwise check if instance variable exists and try to make new array
-        elif not hasattr(self, array_name):
-            # add array name to holder
-            if array_name not in self.agent_array_names:
-                self.agent_array_names.append(array_name)
-
-            # get the dimensions of the array
-            if vector is None:
-                size = self.number_agents  # 1-dimensional array
-            else:
-                size = (self.number_agents, vector)  # 2-dimensional array (1-dimensional of vectors)
-
-            # if using object types, make NoneType array, otherwise make array of zeros
-            if dtype == str or dtype == object:
-                self.__dict__[array_name] = np.empty(size, dtype=object)
-            else:
-                self.__dict__[array_name] = np.zeros(size, dtype=dtype)
-
-        # only apply initial condition if not NoneType
-        if func is not None:
-            # get bounds for applying initial conditions to array
-            if agent_type is None:
-                begin = 0
-                end = self.number_agents
-            else:
-                begin = self.agent_types[agent_type][0]
-                end = self.agent_types[agent_type][1]
-
-            # iterate through array applying function
-            for i in range(begin, end):
-                self.__dict__[array_name][i] = func()
-
-    def agent_graph(self, graph_name):
-        """ Adds graph to the simulation.
-
-            - graph_name: the name of the instance variable made for the graph
+    def mark_to_hatch(self, index):
+        """ Mark the corresponding index of the array with True to
+            indicate that the agent should hatch a new agent.
         """
-        # create instance variable for graph and add graph name to holder
-        self.__dict__[graph_name] = Graph(self.number_agents)
-        self.graph_names.append(graph_name)
+        self.hatching[index] = True
+
+    def mark_to_remove(self, index):
+        """ Mark the corresponding index of the array with True to
+            indicate that the agent should be removed.
+        """
+        self.removing[index] = True
 
     def assign_bins(self, max_agents, distance):
         """ Generalizes agent locations to a bins within lattice imposed on
             the agent space, used for accelerating neighbor searches.
-
-            - max_agents: the current maximum number of agents that can fit
-              into a bin
-            - distance: the radius of search length
         """
         # run until all agents have been put into bins
         while True:
@@ -191,10 +130,6 @@ class Simulation(ABC):
     @record_time
     def get_neighbors(self, graph_name, distance, clear=True):
         """ Finds all neighbors, within fixed radius, for each each agent.
-
-            - graph_name: name of the instance variable pointing to the graph
-            - distance: the radius of search length
-            - clear: if removing existing edges, otherwise all edges are saved
         """
         # get graph object reference and if desired, remove all existing edges in the graph
         graph = self.__dict__[graph_name]
@@ -258,6 +193,43 @@ class Simulation(ABC):
             graph.simplify()
 
     @record_time
+    def update_populations(self):
+        """ Adds/removes agents to/from the simulation by adding/removing
+            indices from the cell arrays and any graphs.
+        """
+        # get indices of hatching/dying agents with Boolean mask
+        add_indices = np.arange(self.number_agents)[self.hatching]
+        remove_indices = np.arange(self.number_agents)[self.removing]
+
+        # count how many added/removed agents
+        num_added = len(add_indices)
+        num_removed = len(remove_indices)
+
+        # go through each agent array name
+        for name in self.agent_array_names:
+            # copy the indices of the agent array data for the hatching agents
+            copies = self.__dict__[name][add_indices]
+
+            # add/remove agent data to/from the arrays
+            self.__dict__[name] = np.concatenate((self.__dict__[name], copies), axis=0)
+            self.__dict__[name] = np.delete(self.__dict__[name], remove_indices, axis=0)
+
+        # go through each graph name
+        for graph_name in self.graph_names:
+            # add/remove vertices from the graph
+            self.__dict__[graph_name].add_vertices(num_added)
+            self.__dict__[graph_name].delete_vertices(remove_indices)
+
+        # change total number of agents and print info to terminal
+        self.number_agents += num_added - num_removed
+        print("\tAdded " + str(num_added) + " agents")
+        print("\tRemoved " + str(num_removed) + " agents")
+
+        # clear the hatching/removing arrays for the next step
+        self.hatching[:] = False
+        self.removing[:] = False
+
+    @record_time
     def temp(self):
         """ Pickle the current state of the simulation which can be used
             to continue a past simulation without losing information.
@@ -271,9 +243,6 @@ class Simulation(ABC):
     def step_values(self, arrays=None):
         """ Outputs a CSV file containing values from the agent arrays with each
             row corresponding to a particular agent index.
-
-            - arrays: a list of agent array names to output, if None then all
-              arrays are outputted
         """
         # only continue if outputting agent values
         if self.output_values:
@@ -320,9 +289,6 @@ class Simulation(ABC):
     def step_image(self, background=(0, 0, 0), origin_bottom=True):
         """ Creates an image of the simulation space. Note the imaging library
             OpenCV uses BGR instead of RGB.
-
-            - background: the color of the background image as BGR
-            - origin_bottom: location of origin True -> bottom/left, False -> top/left
         """
         # only continue if outputting images
         if self.output_images:
@@ -342,9 +308,18 @@ class Simulation(ABC):
             for index in range(self.number_agents):
                 # get xy coordinates, the axis lengths, and color of agent
                 x, y = int(scale * self.locations[index][0]), int(scale * self.locations[index][1])
-                major = int(scale * self.radii[index])
-                minor = int(scale * self.radii[index])
-                color = (255, 50, 50)
+
+                # if radii array exists use those values, otherwise use default
+                if hasattr(self, "radii"):
+                    major, minor = int(scale * self.radii[index]), int(scale * self.radii[index])
+                else:
+                    major, minor = 5, 5
+
+                # if color array exists use those values, otherwise use default
+                if hasattr(self, "colors"):
+                    color = (int(self.colors[index][0]), int(self.colors[index][1]), int(self.colors[index][2]))
+                else:
+                    color = (255, 50, 50)
 
                 # draw the agent and a black outline to distinguish overlapping agents
                 image = cv2.ellipse(image, (x, y), (major, minor), 0, 0, 360, color, -1)
@@ -429,62 +404,6 @@ class Simulation(ABC):
         # end statement
         print("\n\nDone!\n")
 
-    def info(self):
-        """ Prints out info about the simulation.
-        """
-        # current step and number of agents
-        print("Step: " + str(self.current_step))
-        print("Number of agents: " + str(self.number_agents))
-
-    def mark_to_hatch(self, index):
-        """ Mark the corresponding index of the array with True to
-            indicate that the agent should hatch a new agent.
-        """
-        self.hatching[index] = True
-
-    def mark_to_remove(self, index):
-        """ Mark the corresponding index of the array with True to
-            indicate that the agent should be removed.
-        """
-        self.removing[index] = True
-
-    @record_time
-    def update_populations(self):
-        """ Adds/removes agents to/from the simulation by adding/removing
-            indices from the cell arrays and any graphs.
-        """
-        # get indices of hatching/dying agents with Boolean mask
-        add_indices = np.arange(self.number_agents)[self.hatching]
-        remove_indices = np.arange(self.number_agents)[self.removing]
-
-        # count how many added/removed agents
-        num_added = len(add_indices)
-        num_removed = len(remove_indices)
-
-        # go through each agent array name
-        for name in self.agent_array_names:
-            # copy the indices of the agent array data for the hatching agents
-            copies = self.__dict__[name][add_indices]
-
-            # add/remove agent data to/from the arrays
-            self.__dict__[name] = np.concatenate((self.__dict__[name], copies), axis=0)
-            self.__dict__[name] = np.delete(self.__dict__[name], remove_indices, axis=0)
-
-        # go through each graph name
-        for graph_name in self.graph_names:
-            # add/remove vertices from the graph
-            self.__dict__[graph_name].add_vertices(num_added)
-            self.__dict__[graph_name].delete_vertices(remove_indices)
-
-        # change total number of agents and print info to terminal
-        self.number_agents += num_added - num_removed
-        print("\tAdded " + str(num_added) + " agents")
-        print("\tRemoved " + str(num_removed) + " agents")
-
-        # clear the hatching/removing arrays for the next step
-        self.hatching[:] = False
-        self.removing[:] = False
-
     def random_vector(self):
         """ Computes a random vector on the unit sphere centered
             at the origin.
@@ -511,17 +430,68 @@ class Simulation(ABC):
         for key in list(params.keys()):
             self.__dict__[key] = params[key]
 
-    def set_paths(self, output_dir):
-        """ Updates simulation output paths.
+    def add_agents(self, number, agent_type=None):
+        """ Adds number of agents to the simulation.
         """
-        # get file separator
-        separator = os.path.sep
+        # determine bounds for array slice and increase total agents
+        begin = self.number_agents
+        self.number_agents += number
 
-        # make the following paths
-        self.output_path = output_dir + separator  # path to output directory
-        self.main_path = output_dir + self.name + separator  # path to main simulation directory
-        self.images_path = self.main_path + self.name + "_images" + separator  # path to images output directory
-        self.values_path = self.main_path + self.name + "_values" + separator  # path to CSV output directory
+        # if an agent type identifier is passed, set key value to tuple of the array slice
+        if agent_type is not None:
+            self.agent_types[agent_type] = (begin, self.number_agents)
+
+        # go through each agent array extending them as necessary
+        for array_name in self.agent_array_names:
+            # get shape of new agent array
+            shape = np.array(self.__dict__[array_name].shape)
+            shape[0] = number
+
+            # get data type and create array based on type
+            dtype = self.__dict__[array_name].dtype
+            array = empty_array(shape, dtype)
+
+            # add array to existing agent arrays
+            self.__dict__[array_name] = np.concatenate((self.__dict__[array_name], array), axis=0)
+
+    def agent_array(self, array_name, agent_type=None, dtype=float, vector=None, func=None, override=None):
+        """ Adds an agent array to the simulation used to hold values for all agents.
+        """
+        # check that override is numpy array and has correct size
+        if override is not None:
+            if type(override) is np.ndarray and override.shape[0] == self.number_agents:
+                self.__dict__[array_name] = override
+            else:
+                raise Exception("Override array is not a NumPy array and/or does not match the number of agents!")
+
+        # otherwise set attribute with array only attribute doesn't exist
+        elif not hasattr(self, array_name):
+            shape = self.number_agents if vector is None else (self.number_agents, vector)
+            self.__dict__[array_name] = empty_array(shape, dtype)
+
+        # if function provided and indices in array, apply initial condition function to array
+        if func is not None and self.number_agents > 0:
+            # get bounds for applying initial conditions to array
+            if agent_type is None:
+                begin, end = 0, self.number_agents
+            else:
+                begin, end = self.agent_types[agent_type]
+
+            # iterate through array, applying function
+            for i in range(begin, end):
+                self.__dict__[array_name][i] = func()
+
+        # check if array hasn't been made yet
+        if array_name not in self.agent_array_names:
+            # add name to array name list
+            self.agent_array_names.append(array_name)
+
+    def agent_graph(self, graph_name):
+        """ Adds graph to the simulation.
+        """
+        # create instance variable for graph and add graph name to holder
+        self.__dict__[graph_name] = Graph(self.number_agents)
+        self.graph_names.append(graph_name)
 
     def run_simulation(self):
         """ Defines how a simulation is run and what code is run after
@@ -541,6 +511,18 @@ class Simulation(ABC):
         # run any methods at the end
         self.end()
 
+    def full_setup(self):
+        """ In addition to how the setup() method has been defined,
+            this adds further hidden functionality.
+        """
+        # add the following default agent arrays
+        self.agent_array("locations", vector=3)
+        self.agent_array("hatching", dtype=bool)
+        self.agent_array("removing", dtype=bool)
+
+        # call the user defined setup method
+        self.setup()
+
     @classmethod
     def simulation_mode_0(cls, name, output_dir):
         """ Creates a new brand new simulation and runs it through
@@ -556,7 +538,7 @@ class Simulation(ABC):
         shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__"))
 
         # set up the simulation agents and run the simulation
-        sim.setup()
+        sim.full_setup()
         sim.run_simulation()
 
     @staticmethod

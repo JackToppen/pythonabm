@@ -196,6 +196,12 @@ def normal_vector(vector):
         return vector / mag
 
 
+def empty_array(shape, dtype):
+    """ Create empty array based on data type.
+    """
+    return np.empty(shape, dtype=object) if dtype in (str, tuple, object) else np.zeros(shape, dtype=dtype)
+
+
 def record_time(function):
     """ This is a decorator used to time individual methods.
     """

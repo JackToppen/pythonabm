@@ -1,7 +1,7 @@
 import numpy as np
+import random as r
 
-from pythonabm import Simulation
-from pythonabm import *
+from pythonabm import Simulation, record_time
 
 
 class TestSimulation(Simulation):
