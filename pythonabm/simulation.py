@@ -2,10 +2,13 @@ import csv
 import cv2
 import math
 import pickle
+
+import numpy as np
 import psutil
 import random as r
 from abc import ABC, abstractmethod
 
+import pythonabm.backend
 from .backend import *
 
 
@@ -26,7 +29,7 @@ class Simulation(ABC):
         self.method_times = dict()
 
         # hold the names of the agent arrays and the names of any graphs (each agent is a node)
-        self.agent_array_names = list()
+        self.array_names = list()
         self.graph_names = list()
 
         # hold bounds for specifying types of agents that vary in initial values
@@ -96,6 +99,31 @@ class Simulation(ABC):
         """
         self.removing[index] = True
 
+    def __setattr__(self, key, value):
+        """ Overrides the __setattr__ method to make sure that agent array
+            instance variables are the correct size and type.
+        """
+        # if instance variable is an agent array
+        if hasattr(self, "array_names") and key in self.array_names:
+            # if the new value is the correct type and size, set value
+            if type(value) is np.ndarray and value.shape[0] == self.number_agents:
+                object.__setattr__(self, key, value)
+            else:
+                # raise exception if incorrect
+                raise Exception("Agent array should be NumPy array with length equal to number of agents.")
+
+        # if instance variable is an agent graph
+        elif hasattr(self, "graph_names") and key in self.graph_names:
+            # if the new value is the correct type and size, set value
+            if type(value) is pythonabm.backend.Graph and value.vcount() == self.number_agents:
+                object.__setattr__(self, key, value)
+            else:
+                # raise exception if incorrect
+                raise Exception("Agent graph should be iGraph graph with vertices equal to number of agents.")
+        else:
+            # otherwise set instance variable as usual
+            object.__setattr__(self, key, value)
+
     def assign_bins(self, max_agents, distance):
         """ Generalizes agent locations to a bins within lattice imposed on
             the agent space, used for accelerating neighbor searches.
@@ -128,11 +156,10 @@ class Simulation(ABC):
         return bins, bins_help, bin_locations, max_agents
 
     @record_time
-    def get_neighbors(self, graph_name, distance, clear=True):
+    def get_neighbors(self, graph, distance, clear=True):
         """ Finds all neighbors, within fixed radius, for each each agent.
         """
         # get graph object reference and if desired, remove all existing edges in the graph
-        graph = self.__dict__[graph_name]
         if clear:
             graph.delete_edges(None)
 
@@ -206,7 +233,7 @@ class Simulation(ABC):
         num_removed = len(remove_indices)
 
         # go through each agent array name
-        for name in self.agent_array_names:
+        for name in self.array_names:
             # copy the indices of the agent array data for the hatching agents
             copies = self.__dict__[name][add_indices]
 
@@ -248,7 +275,7 @@ class Simulation(ABC):
         if self.output_values:
             # if arrays is None automatically output all agent arrays
             if arrays is None:
-                arrays = self.agent_array_names
+                arrays = self.array_names
 
             # make sure directory exists and get file name
             check_direct(self.values_path)
@@ -308,18 +335,8 @@ class Simulation(ABC):
             for index in range(self.number_agents):
                 # get xy coordinates, the axis lengths, and color of agent
                 x, y = int(scale * self.locations[index][0]), int(scale * self.locations[index][1])
-
-                # if radii array exists use those values, otherwise use default
-                if hasattr(self, "radii"):
-                    major, minor = int(scale * self.radii[index]), int(scale * self.radii[index])
-                else:
-                    major, minor = 5, 5
-
-                # if color array exists use those values, otherwise use default
-                if hasattr(self, "colors"):
-                    color = (int(self.colors[index][0]), int(self.colors[index][1]), int(self.colors[index][2]))
-                else:
-                    color = (255, 50, 50)
+                major, minor = int(scale * self.radii[index]), int(scale * self.radii[index])
+                color = (int(self.colors[index][0]), int(self.colors[index][1]), int(self.colors[index][2]))
 
                 # draw the agent and a black outline to distinguish overlapping agents
                 image = cv2.ellipse(image, (x, y), (major, minor), 0, 0, 360, color, -1)
@@ -439,59 +456,106 @@ class Simulation(ABC):
 
         # if an agent type identifier is passed, set key value to tuple of the array slice
         if agent_type is not None:
-            self.agent_types[agent_type] = (begin, self.number_agents)
+            self.agent_types[agent_type] = (begin, self.number_agents - 1)
 
-        # go through each agent array extending them as necessary
-        for array_name in self.agent_array_names:
+        # go through each agent array, extending them to the new size
+        for array_name in self.array_names:
             # get shape of new agent array
             shape = np.array(self.__dict__[array_name].shape)
             shape[0] = number
 
-            # get data type and create array based on type
-            dtype = self.__dict__[array_name].dtype
-            array = empty_array(shape, dtype)
+            # depending on array, create new array to append to the end of the old array
+            if array_name == "locations":
+                array = np.random.rand(number, 3) * self.size
+            elif array_name == "radii":
+                array = 5 * np.ones(number)
+            elif array_name == "colors":
+                array = np.full(shape, np.array([255, 50, 50]), dtype=int)
+            else:
+                # get data type and create array
+                dtype = self.__dict__[array_name].dtype
+                if dtype in (str, tuple, object):
+                    array = np.empty(shape, dtype=object)
+                else:
+                    array = np.zeros(shape, dtype=dtype)
 
             # add array to existing agent arrays
             self.__dict__[array_name] = np.concatenate((self.__dict__[array_name], array), axis=0)
 
-    def agent_array(self, array_name, agent_type=None, dtype=float, vector=None, func=None, override=None):
-        """ Adds an agent array to the simulation used to hold values for all agents.
+        # go through each agent graph, adding number agents to it
+        for graph_name in self.graph_names:
+            self.__dict__[graph_name].add_vertices(number)
+
+    def agent_array(self, dtype=float, vector=None, initial=None):
+        """ Generate NumPy array that is used to hold agent values. This allows
+            one to specify initial conditions based on agent types.
         """
-        # check that override is numpy array and has correct size
-        if override is not None:
-            if type(override) is np.ndarray and override.shape[0] == self.number_agents:
-                self.__dict__[array_name] = override
-            else:
-                raise Exception("Override array is not a NumPy array and/or does not match the number of agents!")
+        # get shape of array
+        if vector is None:
+            shape = self.number_agents
+        else:
+            shape = (self.number_agents, vector)
 
-        # otherwise set attribute with array only attribute doesn't exist
-        elif not hasattr(self, array_name):
-            shape = self.number_agents if vector is None else (self.number_agents, vector)
-            self.__dict__[array_name] = empty_array(shape, dtype)
+        # create array based on data type
+        if dtype in (str, tuple, object):
+            array = np.empty(shape, dtype=object)
+        else:
+            array = np.zeros(shape, dtype=dtype)
 
-        # if function provided and indices in array, apply initial condition function to array
-        if func is not None and self.number_agents > 0:
-            # get bounds for applying initial conditions to array
-            if agent_type is None:
-                begin, end = 0, self.number_agents
-            else:
-                begin, end = self.agent_types[agent_type]
+        # if initial is a dict of initial conditions based on agent type
+        if type(initial) is dict:
+            # go through each agent type in the dict
+            for key in list(initial.keys()):
+                # get the bounds and apply the function
+                bounds = self.agent_types[key]
+                for i in range(bounds[0], bounds[1] + 1):
+                    array[i] = initial[key]()
+        else:
+            # if no dict provided, apply function for initial condition to entire array
+            for i in range(0, self.number_agents):
+                array[i] = initial()
 
-            # iterate through array, applying function
-            for i in range(begin, end):
-                self.__dict__[array_name][i] = func()
+        return array
 
-        # check if array hasn't been made yet
-        if array_name not in self.agent_array_names:
-            # add name to array name list
-            self.agent_array_names.append(array_name)
-
-    def agent_graph(self, graph_name):
-        """ Adds graph to the simulation.
+    def add_agent_values(self, *args):
+        """ Adds agent array names to list to indicate which instance variables
+            are agent arrays.
         """
-        # create instance variable for graph and add graph name to holder
-        self.__dict__[graph_name] = Graph(self.number_agents)
-        self.graph_names.append(graph_name)
+        # go through each indicated agent value, adding it to the agent array name list
+        for array_name in args:
+            if array_name not in self.array_names:
+                self.array_names.append(array_name)
+
+    def agent_graph(self):
+        """ Create a graph correct number of agents.
+        """
+        return Graph(self.number_agents)
+
+    def add_agent_graphs(self, *args):
+        """ Adds graph names to list to indicate which instance variables
+            are agent graphs.
+        """
+        # go through each indicated agent graph, adding it to the agent graph name list
+        for graph_name in args:
+            if graph_name not in self.graph_names:
+                self.graph_names.append(graph_name)
+
+    def full_setup(self):
+        """ In addition to how the setup() method has been defined,
+            this adds further hidden functionality.
+        """
+        # specify default array names
+        self.array_names = ["locations", "radii", "colors", "hatching", "removing"]
+
+        # make these default arrays
+        self.locations = self.agent_array(vector=3)
+        self.radii = self.agent_array(initial=lambda: 5)
+        self.colors = self.agent_array(dtype=int, vector=3)
+        self.hatching = self.agent_array(dtype=bool)
+        self.removing = self.agent_array(dtype=bool)
+
+        # call the user defined setup method
+        self.setup()
 
     def run_simulation(self):
         """ Defines how a simulation is run and what code is run after
@@ -510,18 +574,6 @@ class Simulation(ABC):
 
         # run any methods at the end
         self.end()
-
-    def full_setup(self):
-        """ In addition to how the setup() method has been defined,
-            this adds further hidden functionality.
-        """
-        # add the following default agent arrays
-        self.agent_array("locations", vector=3)
-        self.agent_array("hatching", dtype=bool)
-        self.agent_array("removing", dtype=bool)
-
-        # call the user defined setup method
-        self.setup()
 
     @classmethod
     def simulation_mode_0(cls, name, output_dir):

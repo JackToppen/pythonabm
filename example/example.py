@@ -21,12 +21,14 @@ class TestSimulation(Simulation):
         # add agents to the simulation
         self.add_agents(self.num_to_start)
 
-        # create the following agent arrays with initial conditions.
-        self.agent_array("locations", override=np.random.rand(self.number_agents, 3) * self.size)
-        self.agent_array("radii", func=lambda: 5)
+        # indicate agent arrays and create the arrays with initial conditions
+        self.add_agent_values("locations", "radii", "colors")
+        self.locations = np.random.rand(self.number_agents, 3) * self.size
+        self.radii = self.agent_array(initial=lambda: 5)
 
-        # create graph for holding agent neighbors
-        self.agent_graph("neighbor_graph")
+        # indicate agent graphs and create the graphs for holding agent neighbors
+        self.add_agent_graphs("neighbor_graph")
+        self.neighbor_graph = self.agent_graph()
 
         # record initial values
         self.step_values()
@@ -36,7 +38,7 @@ class TestSimulation(Simulation):
         """ Overrides the step() method from the Simulation class.
         """
         # get all neighbors within radius of 2
-        self.get_neighbors("neighbor_graph", 5)
+        self.get_neighbors(self.neighbor_graph, 5)
 
         # call the following methods that update agent values
         self.die()
