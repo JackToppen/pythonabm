@@ -4,7 +4,6 @@ import os
 import sys
 import yaml
 import shutil
-import re
 import igraph
 from numba import jit, cuda, prange
 from functools import wraps

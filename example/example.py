@@ -22,12 +22,12 @@ class TestSimulation(Simulation):
         self.add_agents(self.num_to_start)
 
         # indicate agent arrays and create the arrays with initial conditions
-        self.add_agent_values("locations", "radii", "colors")
+        self.indicate_arrays("locations", "radii", "colors")
         self.locations = np.random.rand(self.number_agents, 3) * self.size
         self.radii = self.agent_array(initial=lambda: 5)
 
         # indicate agent graphs and create the graphs for holding agent neighbors
-        self.add_agent_graphs("neighbor_graph")
+        self.indicate_graphs("neighbor_graph")
         self.neighbor_graph = self.agent_graph()
 
         # record initial values

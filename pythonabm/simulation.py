@@ -2,14 +2,20 @@ import csv
 import cv2
 import math
 import pickle
+import psutil
+import shutil
+import time
+import re
+import os
 
 import numpy as np
-import psutil
 import random as r
+
+from numba import cuda
 from abc import ABC, abstractmethod
 
-import pythonabm.backend
-from .backend import *
+from pythonabm.backend import record_time, check_direct, template_params, check_existing, get_end_step, Graph, \
+    progress_bar, starting_params, check_output_dir, assign_bins_jit, get_neighbors_cpu, get_neighbors_gpu
 
 
 class Simulation(ABC):
@@ -115,11 +121,11 @@ class Simulation(ABC):
         # if instance variable is an agent graph
         elif hasattr(self, "graph_names") and key in self.graph_names:
             # if the new value is the correct type and size, set value
-            if type(value) is pythonabm.backend.Graph and value.vcount() == self.number_agents:
+            if type(value) is Graph and value.vcount() == self.number_agents:
                 object.__setattr__(self, key, value)
             else:
                 # raise exception if incorrect
-                raise Exception("Agent graph should be iGraph graph with vertices equal to number of agents.")
+                raise Exception("Agent graph should be PythonABM graph with vertices equal to number of agents.")
         else:
             # otherwise set instance variable as usual
             object.__setattr__(self, key, value)
@@ -517,7 +523,7 @@ class Simulation(ABC):
 
         return array
 
-    def add_agent_values(self, *args):
+    def indicate_arrays(self, *args):
         """ Adds agent array names to list to indicate which instance variables
             are agent arrays.
         """
@@ -531,7 +537,7 @@ class Simulation(ABC):
         """
         return Graph(self.number_agents)
 
-    def add_agent_graphs(self, *args):
+    def indicate_graphs(self, *args):
         """ Adds graph names to list to indicate which instance variables
             are agent graphs.
         """
