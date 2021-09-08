@@ -509,17 +509,18 @@ class Simulation(ABC):
             array = np.zeros(shape, dtype=dtype)
 
         # if initial is a dict of initial conditions based on agent type
-        if type(initial) is dict:
-            # go through each agent type in the dict
-            for key in list(initial.keys()):
-                # get the bounds and apply the function
-                bounds = self.agent_types[key]
-                for i in range(bounds[0], bounds[1] + 1):
-                    array[i] = initial[key]()
-        else:
-            # if no dict provided, apply function for initial condition to entire array
-            for i in range(0, self.number_agents):
-                array[i] = initial()
+        if initial is not None:
+            if type(initial) is dict:
+                # go through each agent type in the dict
+                for key in list(initial.keys()):
+                    # get the bounds and apply the function
+                    bounds = self.agent_types[key]
+                    for i in range(bounds[0], bounds[1] + 1):
+                        array[i] = initial[key]()
+            else:
+                # if no dict provided, apply function for initial condition to entire array
+                for i in range(0, self.number_agents):
+                    array[i] = initial()
 
         return array
 
