@@ -7,9 +7,11 @@ import shutil
 import time
 import re
 import os
+import gc
 
 import numpy as np
 import random as r
+import matplotlib.pyplot as plt
 
 from numba import cuda
 from abc import ABC, abstractmethod
@@ -320,8 +322,7 @@ class Simulation(ABC):
 
     @record_time
     def step_image(self, background=(0, 0, 0), origin_bottom=True):
-        """ Creates an image of the simulation space. Note the imaging library
-            OpenCV uses BGR instead of RGB.
+        """ Creates an image of the simulation space.
         """
         # only continue if outputting images
         if self.output_images:
@@ -335,6 +336,7 @@ class Simulation(ABC):
 
             # create the agent space background image and apply background color
             image = np.zeros((y_size, x_size, 3), dtype=np.uint8)
+            background = (background[2], background[1], background[0])
             image[:, :] = background
 
             # go through all of the agents
@@ -342,7 +344,7 @@ class Simulation(ABC):
                 # get xy coordinates, the axis lengths, and color of agent
                 x, y = int(scale * self.locations[index][0]), int(scale * self.locations[index][1])
                 major, minor = int(scale * self.radii[index]), int(scale * self.radii[index])
-                color = (int(self.colors[index][0]), int(self.colors[index][1]), int(self.colors[index][2]))
+                color = (int(self.colors[index][2]), int(self.colors[index][1]), int(self.colors[index][1]))
 
                 # draw the agent and a black outline to distinguish overlapping agents
                 image = cv2.ellipse(image, (x, y), (major, minor), 0, 0, 360, color, -1)
@@ -356,6 +358,60 @@ class Simulation(ABC):
             image_compression = 4  # image compression of png (0: no compression, ..., 9: max compression)
             file_name = f"{self.name}_image_{self.current_step}.png"
             cv2.imwrite(self.images_path + file_name, image, [cv2.IMWRITE_PNG_COMPRESSION, image_compression])
+
+    @record_time
+    def step_image_3d(self):
+        """ Creates an image of the 3D simulation space.
+        """
+        # only continue if outputting images
+        if self.output_images:
+            # get path and make sure directory exists
+            check_direct(self.images_path)
+
+            # use dark_background theme
+            plt.style.use('dark_background')
+
+            # dots per inch for plot resolution, self.image_quality will specify image size
+            dpi = 300
+
+            # create a new figure and add an axe subplot to the figure
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+
+            # get x,y,z values of agents and map colors from 0-255 to 0-1
+            x, y, z = self.locations[:, 0], self.locations[:, 1], self.locations[:, 2]
+            colors = self.colors / 255
+
+            # create scatter plot
+            ax.scatter(x, y, z, c=colors, marker="o", alpha=1)
+
+            # turn off gridlines and ticks
+            ax.grid(False)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_zticks([])
+
+            # set bounds of figure and aspect ratio
+            ax.set_xlim([0, self.size[0]])
+            ax.set_ylim([0, self.size[1]])
+            ax.set_zlim([0, self.size[2]])
+            ax.set_box_aspect(self.size)
+
+            # reduce margins around figure
+            fig.tight_layout()
+
+            # calculate size of figure in inches to match self.image_quality size
+            inches = self.image_quality / dpi
+            fig.set_size_inches(inches, inches)
+
+            # get file name and save to image directory
+            file_name = f"{self.name}_image_{self.current_step}.png"
+            fig.savefig(self.images_path + file_name, dpi=dpi)
+
+            # close figure and garbage collect to prevent memory leak
+            fig.clf()
+            plt.close("all")
+            gc.collect(2)
 
     def data(self):
         """ Adds a new line to a running CSV holding data about the simulation
@@ -476,7 +532,7 @@ class Simulation(ABC):
             elif array_name == "radii":
                 array = 5 * np.ones(number)
             elif array_name == "colors":
-                array = np.full(shape, np.array([255, 50, 50]), dtype=int)
+                array = np.full(shape, np.array([50, 50, 255]), dtype=int)
             else:
                 # get data type and create array
                 dtype = self.__dict__[array_name].dtype
