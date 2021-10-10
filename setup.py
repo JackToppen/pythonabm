@@ -2,14 +2,14 @@ import setuptools
 
 setuptools.setup(
     name="pythonabm",
-    version="0.1.1",
+    version="0.1.2",
     author="Jack Toppen",
     author_email="jtoppen3@gatech.edu",
     description="ABM framework for Python",
     packages=["pythonabm"],
     python_requires=">=3.7",
     install_requires=[
-        "matplotlib"
+        "matplotlib",
         "numpy",
         "numba",
         "opencv-python",

@@ -32,7 +32,7 @@ class TestSimulation(Simulation):
 
         # record initial values
         self.step_values()
-        self.step_image()
+        self.step_image_3d()
 
     def step(self):
         """ Overrides the step() method from the Simulation class.
@@ -50,7 +50,7 @@ class TestSimulation(Simulation):
 
         # get the following data
         self.step_values()
-        self.step_image()
+        self.step_image_3d()
         self.temp()
         self.data()
 
