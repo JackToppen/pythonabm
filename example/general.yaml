@@ -8,7 +8,7 @@ cuda: False
 end_step: 50
 
 # What are the dimensions (xyz) of the space? Ex. [4000, 4000, 0]
-size: [1000, 1000, 1000]
+size: [1000, 1000, 0]
 
 # Do you want the agent array values outputted to a CSV at each step? Ex. True
 output_values: True
