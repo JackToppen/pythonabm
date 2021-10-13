@@ -395,7 +395,7 @@ class Simulation(ABC):
             ax.set_xlim([0, self.size[0]])
             ax.set_ylim([0, self.size[1]])
             ax.set_zlim([0, self.size[2]])
-            ax.set_box_aspect(self.size)
+            ax.set_box_aspect((self.size[0], self.size[1], self.size[2]))
 
             # reduce margins around figure
             fig.tight_layout()
