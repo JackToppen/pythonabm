@@ -26,3 +26,4 @@ video_quality: 1000
 
 # What should the frames-per-second (FPS) of the resulting video comprised of step images be? Ex. 10.0
 fps: 10
+

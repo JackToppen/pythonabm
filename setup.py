@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="pythonabm",
-    version="0.1.3",
+    version="0.1.7",
     author="Jack Toppen",
     author_email="jtoppen3@gatech.edu",
     description="ABM framework for Python",

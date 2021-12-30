@@ -650,7 +650,7 @@ class Simulation(ABC):
 
         # copy model files to simulation directory, ignoring __pycache__ files
         direc_path = sim.main_path + name + "_copy"
-        shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__", os.path.basename(output_dir[:-1])))
 
         # set up the simulation agents and run the simulation
         sim.full_setup()
@@ -699,6 +699,10 @@ class Simulation(ABC):
         """ Configures/runs the model based on the specified
             simulation mode.
         """
+        # get absolute path
+        output_dir = os.path.expanduser(output_dir)
+        output_dir = os.path.abspath(output_dir)
+
         # check that the output directory exists and get the name/mode for the simulation
         output_dir = check_output_dir(output_dir)
         name, mode = starting_params()

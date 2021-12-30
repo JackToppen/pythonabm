@@ -92,7 +92,7 @@ def get_neighbors_gpu(locations, bin_locations, bins, bins_help, distance, edges
                         current = bins[x + i][y + j][z + k][l]
 
                         # check to see if the agent is a neighbor and prevent duplicates with index condition
-                        if cuda_magnitude(locations[index], locations[current]) <= distance and index < current:
+                        if index < current and cuda_magnitude(locations[index], locations[current]) <= distance:
                             # if there is room, add the edge
                             if agent_edge_count < max_neighbors:
                                 # get the index for the edge
@@ -139,7 +139,7 @@ def get_neighbors_cpu(number_agents, locations, bin_locations, bins, bins_help, 
                         current = bins[x + i][y + j][z + k][l]
 
                         # check to see if the agent is a neighbor and prevent duplicates with index condition
-                        if np.linalg.norm(locations[current] - locations[index]) <= distance and index < current:
+                        if index < current and np.linalg.norm(locations[current] - locations[index]) <= distance:
                             # if there is room, add the edge
                             if agent_edge_count < max_neighbors:
                                 # get the index for the edge

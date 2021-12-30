@@ -94,6 +94,6 @@ class TestSimulation(Simulation):
             if r.random() < 0.1:
                 self.mark_to_hatch(index)
 
-
 if __name__ == "__main__":
-    TestSimulation.start("C:\\Research\\ABM_outputs")
+    TestSimulation.start("~/Documents/Research/ABM_outputs")
+
