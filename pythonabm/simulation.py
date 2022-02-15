@@ -344,7 +344,7 @@ class Simulation(ABC):
                 # get xy coordinates, the axis lengths, and color of agent
                 x, y = int(scale * self.locations[index][0]), int(scale * self.locations[index][1])
                 major, minor = int(scale * self.radii[index]), int(scale * self.radii[index])
-                color = (int(self.colors[index][2]), int(self.colors[index][1]), int(self.colors[index][1]))
+                color = (int(self.colors[index][2]), int(self.colors[index][1]), int(self.colors[index][0]))
 
                 # draw the agent and a black outline to distinguish overlapping agents
                 image = cv2.ellipse(image, (x, y), (major, minor), 0, 0, 360, color, -1)
