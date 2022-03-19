@@ -532,7 +532,7 @@ class Simulation(ABC):
             elif array_name == "radii":
                 array = 5 * np.ones(number)
             elif array_name == "colors":
-                array = np.full(shape, np.array([50, 50, 255]), dtype=int)
+                array = np.full(shape, np.array([0, 0, 255]), dtype=int)
             else:
                 # get data type and create array
                 dtype = self.__dict__[array_name].dtype
@@ -572,11 +572,17 @@ class Simulation(ABC):
                     # get the bounds and apply the function
                     bounds = self.agent_types[key]
                     for i in range(bounds[0], bounds[1] + 1):
-                        array[i] = initial[key]()
+                        if callable(initial[key]):
+                            array[i] = initial[key]()
+                        else:
+                            array[i] = initial[key]
             else:
                 # if no dict provided, apply function for initial condition to entire array
                 for i in range(0, self.number_agents):
-                    array[i] = initial()
+                    if callable(initial):
+                        array[i] = initial()
+                    else:
+                        array[i] = initial
 
         return array
 
@@ -700,8 +706,7 @@ class Simulation(ABC):
             simulation mode.
         """
         # get absolute path
-        output_dir = os.path.expanduser(output_dir)
-        output_dir = os.path.abspath(output_dir)
+        output_dir = os.path.abspath(os.path.expanduser(output_dir))
 
         # check that the output directory exists and get the name/mode for the simulation
         output_dir = check_output_dir(output_dir)

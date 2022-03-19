@@ -1,6 +1,7 @@
 import numpy as np
 import random as r
 
+# import the Simulation class and record_time decorator from the PythonABM library
 from pythonabm import Simulation, record_time
 
 
@@ -12,21 +13,28 @@ class TestSimulation(Simulation):
         # initialize the Simulation object
         Simulation.__init__(self)
 
-        # read parameters from YAML file and add them to instance variables
+        # read parameters from YAML file and add them as instance variables
         self.yaml_parameters("general.yaml")
+
+        # define instance variables outside of the YAML file
+        self.move_step = 2
 
     def setup(self):
         """ Overrides the setup() method from the Simulation class.
         """
-        # add agents to the simulation
-        self.add_agents(self.num_to_start)
+        # add agents to the simulation, indicate agent subtypes
+        self.add_agents(self.num_green_agents, agent_type="green")
+        self.add_agents(self.num_blue_agents, agent_type="blue")
 
-        # indicate agent arrays and create the arrays with initial conditions
+        # indicate agent arrays for storing agent values
         self.indicate_arrays("locations", "radii", "colors")
-        self.locations = np.random.rand(self.number_agents, 3) * self.size
-        self.radii = self.agent_array(initial=lambda: 5)
 
-        # indicate agent graphs and create the graphs for holding agent neighbors
+        # set initial agent values
+        self.locations = np.random.rand(self.number_agents, 3) * self.size
+        self.radii = self.agent_array(initial=lambda: r.uniform(1, 2))
+        self.colors = self.agent_array(vector=3, initial={"green": (0, 255, 0), "blue": (0, 0, 255)}, dtype=int)
+
+        # indicate agent graphs and create a graph for holding agent neighbors
         self.indicate_graphs("neighbor_graph")
         self.neighbor_graph = self.agent_graph()
 
@@ -37,7 +45,7 @@ class TestSimulation(Simulation):
     def step(self):
         """ Overrides the step() method from the Simulation class.
         """
-        # get all neighbors within radius of 2
+        # get all neighbors within radius of 5, updating the graph object
         self.get_neighbors(self.neighbor_graph, 5)
 
         # call the following methods that update agent values
@@ -48,7 +56,7 @@ class TestSimulation(Simulation):
         # add/remove agents from the simulation
         self.update_populations()
 
-        # get the following data
+        # save data from the simulation
         self.step_values()
         self.step_image()
         self.temp()
@@ -61,20 +69,19 @@ class TestSimulation(Simulation):
 
     @record_time
     def die(self):
-        """ Updates an agent based on the presence of neighbors.
+        """ Determine which agents will die during this step.
         """
-        # determine which agents are being removed
         for index in range(self.number_agents):
             if r.random() < 0.1:
                 self.mark_to_remove(index)
 
     @record_time
     def move(self):
-        """ Assigns new location to agent.
+        """ Assigns new locations to agents.
         """
         for index in range(self.number_agents):
             # get new location position
-            new_location = self.locations[index] + 5 * self.random_vector()
+            new_location = self.locations[index] + self.move_step * self.random_vector()
 
             # check that the new location is within the space, otherwise use boundary values
             for i in range(3):
@@ -87,13 +94,11 @@ class TestSimulation(Simulation):
 
     @record_time
     def reproduce(self):
-        """ If the agent meets criteria, hatch a new agent.
+        """ Determine which agents will hatch a new agent during this step.
         """
-        # determine which agents are hatching
         for index in range(self.number_agents):
             if r.random() < 0.1:
                 self.mark_to_hatch(index)
 
 if __name__ == "__main__":
-    TestSimulation.start("~/Documents/Research/ABM_outputs")
-
+    TestSimulation.start("~/Documents/Research/Outputs")

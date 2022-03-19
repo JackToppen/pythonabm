@@ -261,12 +261,7 @@ def check_output_dir(output_dir):
         # otherwise get correct path to directory
         elif user == "n":
             output_dir = input("Correct path (absolute) to output directory: ")
-
-            # update paths.yaml file with new output directory path
-            keys["output_dir"] = output_dir
-            with open("paths.yaml", "w") as file:
-                keys = yaml.dump(keys, file)
-
+            output_dir = os.path.abspath(os.path.expanduser(output_dir))
         else:
             print("Either type \"y\" or \"n\"")
 
