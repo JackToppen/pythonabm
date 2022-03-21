@@ -1,5 +1,7 @@
 .idea
 __pycache__
-build/*
-dist/*
-pythonabm.egg-info/*
+build/
+dist/
+*.egg-info/
+docs/build/
+/docs/source/generated/
