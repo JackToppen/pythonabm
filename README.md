@@ -1,5 +1,6 @@
 # PythonABM
 [![Documentation Status](https://readthedocs.org/projects/readthedocsjacktoppen/badge/?version=latest)](https://readthedocsjacktoppen.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/pythonabm.svg)](https://badge.fury.io/py/pythonabm)
 
 PythonABM makes agent-based modeling (ABM) in Python accessible by providing an efficient base framework for building
 ABMs through an inheritable Simulation class. Agent values are stored with arrays to promote efficiency through

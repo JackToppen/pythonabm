@@ -23,6 +23,10 @@ class Graph(igraph.Graph):
 
     def num_neighbors(self, index):
         """ Returns the number of neighbors for the index.
+
+            :param index: Index of agent in graph.
+            :type index: int
+            :returns: Number of neighbors for agent at index
         """
         return len(self.neighbors(index))
 
@@ -31,6 +35,20 @@ class Graph(igraph.Graph):
 def assign_bins_jit(number_agents, bin_locations, bins, bins_help, max_agents):
     """ This just-in-time compiled method performs the actual
         calculations for the assign_bins() method.
+
+        :param number_agents: The current number of agents in the simulation.
+        :param locations: The locations of the agents.
+        :param bin_locations: Discretized agent locations for bin sorting.
+        :param bins: Holds the agent based on discretized locations.
+        :param bins_help: Stores the number of agents in each bin.
+        :param max_agents: The maximum number of agents that can be stored in bin.
+
+        :type number_agents: int
+        :type locations: numpy.ndarray
+        :type bin_locations: numpy.ndarray
+        :type bins: numpy.ndarray
+        :type bins_help: numpy.ndarray
+        :type max_agents: int
     """
     for index in range(number_agents):
         # get the indices of the bin location
@@ -64,6 +82,8 @@ def cuda_magnitude(vector_1, vector_2):
 def get_neighbors_gpu(locations, bin_locations, bins, bins_help, distance, edges, if_edge, edge_count, max_neighbors):
     """ This just-in-time compiled CUDA kernel performs the actual
         calculations for the get_neighbors() method.
+
+        See get_neighbors_gpu for parameter descriptions.
     """
     # get the agent index in the array
     index = cuda.grid(1)
@@ -115,6 +135,30 @@ def get_neighbors_cpu(number_agents, locations, bin_locations, bins, bins_help, 
                       max_neighbors):
     """ This just-in-time compiled method performs the actual
         calculations for the get_neighbors() method.
+
+        :param number_agents: The current number of agents in the simulation.
+        :param locations: The locations of the agents.
+        :param bin_locations: Discretized agent locations for bin sorting.
+        :param bins: Holds the agent based on discretized locations.
+        :param bins_help: Stores the number of agents in each bin.
+        :param distance: The radius of each agent's neighborhood.
+        :param edges: Stores the graph edge connections between neighboring agents.
+        :param if_edge: Whether edges are a non-zero values.
+        :param edge_count: The number of neighbors per agent.
+        :param max_neighbors: The maximum number of agents that can be stored with these arrays.
+
+        :type number_agents: int
+        :type locations: numpy.ndarray
+        :type bin_locations: numpy.ndarray
+        :type bins: numpy.ndarray
+        :type bins_help: numpy.ndarray
+        :type distance: float
+        :type edges: numpy.ndarray
+        :type if_edge: numpy.ndarray
+        :type edge_count: numpy.ndarray
+        :type max_neighbors: int
+
+        :returns: The edge values and the number of edges (neighbors) per agent.
     """
     for index in prange(number_agents):
         # get the starting index for writing edges to the holder array
@@ -160,7 +204,10 @@ def get_neighbors_cpu(number_agents, locations, bin_locations, bins, bins_help, 
 
 
 def check_direct(path):
-    """ Makes sure directory exists.
+    """ Makes sure directory exists, if not make that directory
+
+        :param path: The path to a directory.
+        :type path: str
     """
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -168,6 +215,11 @@ def check_direct(path):
 
 def progress_bar(progress, maximum):
     """ Makes a progress bar to show progress of output.
+
+        :param progress: How close the process is to the maximum.
+        :param maximum: Maximum value for progress.
+        :type progress: int
+        :type maximum: int
     """
     # length of the bar
     length = 60
@@ -184,6 +236,10 @@ def progress_bar(progress, maximum):
 
 def normal_vector(vector):
     """ Normalizes the vector.
+
+        :param vector: Vector to be normalized.
+        :type vector: numpy.ndarray
+        :returns: A normalized vector
     """
     # get the magnitude of the vector
     mag = np.linalg.norm(vector)
@@ -197,12 +253,22 @@ def normal_vector(vector):
 
 def empty_array(shape, dtype):
     """ Create empty array based on data type.
+
+        :param shape: Shape of the empty array.
+        :param dtype: Data type of the array.
+        :type shape: int or tuple
+        :type dtype: type
+        :returns: An empty NumPy array
     """
     return np.empty(shape, dtype=object) if dtype in (str, tuple, object) else np.zeros(shape, dtype=dtype)
 
 
 def record_time(function):
     """ This is a decorator used to time individual methods.
+
+        :param function: A function to be decorated.
+        :type function: func
+        :returns: A wrapped function
     """
     @wraps(function)
     def wrap(simulation, *args, **kwargs):    # args and kwargs are for additional arguments
@@ -221,6 +287,13 @@ def record_time(function):
 def commandline_param(flag, dtype):
     """ Returns the value for option passed at the
         command line.
+
+        :param flag: The command line flag.
+        :param dtype: Data type for the parameter.
+        :type flag: str
+        :type dtype: type
+        :returns: Parameter value
+        :raises: Exception
     """
     # go through list of commandline arguments
     args = sys.argv
@@ -245,6 +318,10 @@ def template_params(path):
 
 def check_output_dir(output_dir):
     """ Checks that the output directory exists.
+
+        :param output_dir: Path to ABM output directory.
+        :type output_dir: str
+        :returns: A correct output path
     """
     # run until directory exists
     while not os.path.isdir(output_dir):
@@ -277,6 +354,8 @@ def check_output_dir(output_dir):
 def starting_params():
     """ Returns the name and mode for the simulation
         either from the commandline or a text-based UI.
+
+        :returns: The simulation name and mode
     """
     # try to get the name from the commandline, otherwise run the text-based UI
     try:
@@ -315,6 +394,8 @@ def starting_params():
 def get_end_step():
     """ If using the continuation mode, get the last step
         number for the simulation.
+
+        :returns: The simulation end step number
     """
     try:
         end_step = commandline_param("-es", int)
@@ -342,6 +423,13 @@ def get_end_step():
 def check_existing(name, output_path, new_simulation=True):
     """ Based on the mode, checks to see if an existing simulation
         in the output path has the same name.
+
+        :param name: The name of the simulation.
+        :param output_path: Path to simulation output directory.
+        :param new_simulation: Whether this is a new simulation or not.
+        :type name: str
+        :type output_path: str
+        :type new_simulation: bool
     """
     # if running a new simulation
     if new_simulation:

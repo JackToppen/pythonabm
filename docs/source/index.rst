@@ -1,19 +1,16 @@
-Welcome to PythonABM's documentation!
-===================================
+PythonABM documentation
+=======================
 
-**PythonABM** is a Python library
+PythonABM is a framework for constructing agent-based models (ABMs) in Python.
 
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+See the :doc:`installation` section for further information on installing the library
 
-.. note::
-
-   This project is under active development.
 
 Contents
 --------
 
 .. toctree::
 
-   usage
-   api
+   installation
+   simulation
+   backend
