@@ -5,7 +5,7 @@ CPU/GPU parallelization. More information can be found on PyPI at [https://pypi.
 
 <p align="center">
     <img src="./doc/front_image.png" alt="" width="500">
-p>
+<p>
 
 
 ## 
