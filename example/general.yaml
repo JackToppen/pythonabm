@@ -10,6 +10,9 @@ end_step: 30
 # What are the dimensions (xyz) of the simulation space? Ex. [100, 100, 0]
 size: [200, 200, 0]
 
+# Do you want to use NVIDIA CUDA acceleration for some computationally tasking methods? Ex. True
+cuda: False
+
 # Do you want the agent values outputted to a CSV at each step? Ex. True
 output_values: True
 

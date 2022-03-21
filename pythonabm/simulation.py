@@ -53,6 +53,7 @@ class Simulation(ABC):
         self.image_quality = 2000
         self.video_quality = 1000
         self.fps = 10
+        self.tpb = 96    # blocks per grid for CUDA neighbor search
 
     @abstractmethod
     def setup(self):
@@ -194,7 +195,7 @@ class Simulation(ABC):
                 edge_count = cuda.to_device(edge_count)
 
                 # specify threads-per-block and blocks-per-grid values
-                tpb = 72
+                tpb = self.tpb
                 bpg = math.ceil(self.number_agents / tpb)
 
                 # call the CUDA kernel, sending arrays to GPU
