@@ -4,7 +4,7 @@ ABMs through an inheritable Simulation class. Agent values are stored with array
 CPU/GPU parallelization. More information can be found on PyPI at [https://pypi.org/project/pythonabm/](https://pypi.org/project/pythonabm/).
 
 <p align="center">
-    <img src="./doc/front_image.png" alt="" width="500" />
+    <img src="./doc/front_image.png" alt="" width="500">
 p>
 
 
