@@ -1,0 +1,4 @@
+Thanks to:
+  - Daniel Cruz for his guidance in creating this library
+  - Jake Hafertepe for profiling the CUDA kernels on his PC
+  - Adam Cook for testing out the library
