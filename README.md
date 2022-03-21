@@ -1,7 +1,7 @@
 # PythonABM
 PythonABM makes agent-based modeling (ABM) in Python accessible by providing an efficient base framework for building
 ABMs through an inheritable Simulation class. Agent values are stored with arrays to promote efficiency through
-CPU/GPU parallelization. More information can be found on PyPI at [https://pypi.org/project/pythonabm/](https://pypi.org/project/pythonabm/).
+CPU/GPU parallelization. More information on PythonABM can be found at [pypi.org](https://pypi.org/project/pythonabm/).
 
 <p align="center">
     <img src="./doc/front_image.png" alt="" width="500">
