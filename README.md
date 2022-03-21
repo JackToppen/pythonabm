@@ -3,7 +3,9 @@ PythonABM makes agent-based modeling (ABM) in Python accessible by providing an 
 ABMs through an inheritable Simulation class. Agent values are stored with arrays to promote efficiency through
 CPU/GPU parallelization. More information can be found on PyPI at [https://pypi.org/project/pythonabm/](https://pypi.org/project/pythonabm/).
 
-![front_image](doc/front_image.png)
+<center>
+    <img src="./doc/front_image.png" alt="" width="500" />
+</center>
 
 
 ## 
@@ -45,9 +47,9 @@ python main.py -n (name) -m (mode) -es (end step)
 ### NVIDIA CUDA support
 In order to use the code associated with CUDA GPU parallelization, PythonABM requires a CUDA
 compatible GPU and NVIDIA's CUDA toolkit. If you don't have the toolkit, first update the NVIDIA GPU drivers
-[https://www.nvidia.com/download/index.aspx](https://www.nvidia.com/download/index.aspx) then download the toolkit either
+[here](https://www.nvidia.com/download/index.aspx) then download the toolkit either
 directly from NVIDIA
-[https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads) or with the conda command
+[there](https://developer.nvidia.com/cuda-downloads) or with the conda command
 show below.
 ```
 conda install cudatoolkit
