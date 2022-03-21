@@ -53,7 +53,7 @@ class Simulation(ABC):
         self.image_quality = 2000
         self.video_quality = 1000
         self.fps = 10
-        self.tpb = 96    # blocks per grid for CUDA neighbor search
+        self.tpb = 4    # blocks per grid for CUDA neighbor search, use higher number if performance is slow
 
     @abstractmethod
     def setup(self):
