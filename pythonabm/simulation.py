@@ -8,11 +8,9 @@ import time
 import re
 import os
 import gc
-
 import numpy as np
 import random as r
 import matplotlib.pyplot as plt
-
 from numba import cuda
 from abc import ABC, abstractmethod
 
@@ -77,6 +75,9 @@ class Simulation(ABC):
 
     def set_paths(self, output_dir):
         """ Updates simulation paths to various output directories.
+
+            :param output_dir: Simulation output directory.
+            :type output_dir: str
         """
         # get file separator
         separator = os.path.sep
@@ -99,12 +100,18 @@ class Simulation(ABC):
     def mark_to_hatch(self, index):
         """ Mark the corresponding index of the array with True to
             indicate that the agent should hatch a new agent.
+
+            :param index: The unique index of an agent.
+            :type index: int
         """
         self.hatching[index] = True
 
     def mark_to_remove(self, index):
         """ Mark the corresponding index of the array with True to
             indicate that the agent should be removed.
+
+            :param index: The unique index of an agent.
+            :type index: int
         """
         self.removing[index] = True
 
@@ -136,6 +143,11 @@ class Simulation(ABC):
     def assign_bins(self, max_agents, distance):
         """ Generalizes agent locations to a bins within lattice imposed on
             the agent space, used for accelerating neighbor searches.
+
+            :param max_agents: The maximum number of agents in a bin.
+            :param distance: The radius of each agent's neighborhood.
+            :type max_agents: int
+            :type distance: float
         """
         # run until all agents have been put into bins
         while True:
@@ -167,6 +179,13 @@ class Simulation(ABC):
     @record_time
     def get_neighbors(self, graph, distance, clear=True):
         """ Finds all neighbors, within fixed radius, for each each agent.
+
+            :param graph: The graph storing the neighbor connections between agents.
+            :param distance: The radius of each agent's neighborhood.
+            :param clear: If true, clear the previous neighbor connections.
+            :type graph: pythonabm.Graph
+            :type distance: float
+            :type clear: bool
         """
         # get graph object reference and if desired, remove all existing edges in the graph
         if clear:
@@ -279,6 +298,9 @@ class Simulation(ABC):
     def step_values(self, arrays=None):
         """ Outputs a CSV file containing values from the agent arrays with each
             row corresponding to a particular agent index.
+
+            :param arrays: A list of strings of agent values to record.
+            :type arrays: list
         """
         # only continue if outputting agent values
         if self.output_values:
@@ -324,6 +346,11 @@ class Simulation(ABC):
     @record_time
     def step_image(self, background=(0, 0, 0), origin_bottom=True):
         """ Creates an image of the simulation space.
+
+            :param background: The 0-255 RGB color of the image background.
+            :param origin_bottom: If true, the origin will be on the bottom, left of the image.
+            :type background: tuple
+            :type origin_bottom: bool
         """
         # only continue if outputting images
         if self.output_images:
@@ -502,6 +529,9 @@ class Simulation(ABC):
     def yaml_parameters(self, path):
         """ Add the instance variables to the Simulation object based
             on the keys and values from a YAML file.
+
+            :param path: Path to YAML template file for simulation instance variables.
+            :type path: str
         """
         # load the dictionary
         params = template_params(path)
@@ -512,6 +542,9 @@ class Simulation(ABC):
 
     def add_agents(self, number, agent_type=None):
         """ Adds number of agents to the simulation.
+
+            :param number_agents: The current number of agents in the simulation.
+            :type number_agents: int
         """
         # determine bounds for array slice and increase total agents
         begin = self.number_agents
@@ -552,6 +585,14 @@ class Simulation(ABC):
     def agent_array(self, dtype=float, vector=None, initial=None):
         """ Generate NumPy array that is used to hold agent values. This allows
             one to specify initial conditions based on agent types.
+
+            :param dtype: Data type of the array.
+            :param vector: Size of agent value vector if not None.
+            :param initial: Initial value of array index, can be a function.
+            :type dtype: type
+            :type vector: None or int
+            :type initial: Object
+            :returns: A NumPy array
         """
         # get shape of array
         if vector is None:
@@ -590,6 +631,9 @@ class Simulation(ABC):
     def indicate_arrays(self, *args):
         """ Adds agent array names to list to indicate which instance variables
             are agent arrays.
+
+            :param args: A series of instance variable names to indicate agent arrays.
+            :type args: str
         """
         # go through each indicated agent value, adding it to the agent array name list
         for array_name in args:
@@ -604,6 +648,9 @@ class Simulation(ABC):
     def indicate_graphs(self, *args):
         """ Adds graph names to list to indicate which instance variables
             are agent graphs.
+
+            :param args: A series of instance variable names to indicate agent graphs.
+            :type args: str
         """
         # go through each indicated agent graph, adding it to the agent graph name list
         for graph_name in args:
@@ -649,6 +696,11 @@ class Simulation(ABC):
     def simulation_mode_0(cls, name, output_dir):
         """ Creates a new brand new simulation and runs it through
             all defined steps.
+
+            :param name: The name of the simulation.
+            :param output_dir: Path to simulation output directory.
+            :type name: str
+            :type output_dir: str
         """
         # make simulation instance, update name, and add paths
         sim = cls()
@@ -667,6 +719,11 @@ class Simulation(ABC):
     def simulation_mode_1(name, output_dir):
         """ Opens an existing simulation and runs it for a newly
             specified number of steps.
+
+            :param name: The name of the simulation.
+            :param output_dir: Path to simulation output directory.
+            :type name: str
+            :type output_dir: str
         """
         # load previous simulation object from pickled temp file
         file_name = output_dir + name + os.sep + name + "_temp.pkl"
@@ -683,6 +740,11 @@ class Simulation(ABC):
     @classmethod
     def simulation_mode_2(cls, name, output_dir):
         """ Turns existing simulation images into a video.
+
+            :param name: The name of the simulation.
+            :param output_dir: Path to simulation output directory.
+            :type name: str
+            :type output_dir: str
         """
         # make simulation object for video/path information
         sim = cls()
@@ -695,6 +757,11 @@ class Simulation(ABC):
     @staticmethod
     def simulation_mode_3(name, output_dir):
         """ Archives existing simulation to a ZIP file.
+
+            :param name: The name of the simulation.
+            :param output_dir: Path to simulation output directory.
+            :type name: str
+            :type output_dir: str
         """
         # zip a copy of the folder and save it to the output directory
         print("Compressing \"" + name + "\" simulation...")
@@ -705,6 +772,9 @@ class Simulation(ABC):
     def start(cls, output_dir):
         """ Configures/runs the model based on the specified
             simulation mode.
+
+            :param output_dir: Path to simulation output directory.
+            :type output_dir: str
         """
         # get absolute path
         output_dir = os.path.abspath(os.path.expanduser(output_dir))
