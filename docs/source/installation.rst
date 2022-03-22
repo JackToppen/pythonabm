@@ -1,7 +1,7 @@
 Installation
 ============
 
-.. _installation:
+.. _install:
 .. _link:
 
 Install
