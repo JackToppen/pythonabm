@@ -1,7 +1,7 @@
 Backend
 =======
 
-.. automodule:: backend
+.. automodule:: pythonabm.backend
     :members:
     :undoc-members:
     :show-inheritance:
