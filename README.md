@@ -1,5 +1,5 @@
 # PythonABM
-[![Documentation Status](https://readthedocs.org/projects/readthedocsjacktoppen/badge/?version=latest)](https://readthedocsjacktoppen.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/pythonabm/badge/?version=latest)](https://pythonabm.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pythonabm.svg)](https://badge.fury.io/py/pythonabm)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![GitHub](https://badgen.net/badge/icon/github?icon=github&label)](https://github.com/JackToppen/pythonabm)
