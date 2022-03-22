@@ -1,5 +1,6 @@
-Simulation
+Simulations
 ==========
 
-.. autoclass:: simulation.Simulation
-   :members:
+.. automodule:: simulation
+   :undoc-members:
+   :show-inheritance:
