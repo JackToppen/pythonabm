@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setuptools.setup(
     name="pythonabm",
-    version="0.2.2",
+    version="0.3.0",
     author="Jack Toppen",
     author_email="jtoppen3@gatech.edu",
     description="Framework for building Agent-Based Models (ABMs) in Python",

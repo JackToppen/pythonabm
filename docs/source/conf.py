@@ -11,7 +11,7 @@ copyright = '2022, Jack Toppen'
 author = 'Jack Toppen'
 
 release = '0.1'
-version = '0.1.9'
+version = '0.3.0'
 
 # -- General configuration
 
