@@ -18,15 +18,11 @@ ABMs. More information on PythonABM can be found below.
 
 
 .. toctree::
-   :caption: Setup
+   :caption: Documentation
 
    installation
    example
-
-.. toctree::
-   :caption: Start
-
-   start
+   running
 
 .. toctree::
    :caption: Structure

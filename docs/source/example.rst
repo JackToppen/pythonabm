@@ -1,11 +1,14 @@
-Example
-=======
+Example simulation
+==================
 
-The following script and YAML file, which can be found `here <https://github.com/JackToppen/pythonabm/tree/master/example>`__ on
-GitHub, serve as templates for constructing a simulation using PythonABM.
+The following files, which can be found on GitHub `here <https://github.com/kemplab/pythonabm/tree/master/example>`__,
+serve as examples for constructing your own simulation using the PythonABM framework:
 
-Script example
---------------
+Simulation script
+-----------------
+
+Once you've installed PythonABM and configured the output directory via the start() method, running this script will
+generate a small example simulation. Find it here: `example.py <https://github.com/kemplab/pythonabm/blob/master/example/example.py>`__
 
 .. code-block::
 
@@ -114,8 +117,11 @@ Script example
     if __name__ == "__main__":
         TestSimulation.start("~/Documents/Research/Outputs")
 
-YAML template example
----------------------
+Template file
+-------------
+
+YAML template files like this example below are a high-level way of passing in parameters to a simulation. Find it here:
+`general.yaml <https://github.com/kemplab/pythonabm/blob/master/example/general.yaml>`__
 
 .. code-block::
 
