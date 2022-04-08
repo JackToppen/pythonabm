@@ -11,7 +11,7 @@ ABMs. More information on PythonABM can be found below.
 -  PyPI:
    `pypi.org/project/pythonabm <https://pypi.org/project/pythonabm/>`__
 
-.. image:: https://github.com/JackToppen/pythonabm/blob/main/docs/front_image.png?raw=true
+.. image:: https://github.com/kemplab/pythonabm/blob/main/docs/front_image.png?raw=true
    :align: center
    :width: 400
 
