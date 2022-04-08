@@ -12,7 +12,7 @@ PythonABM can also be built from `source <https://github.com/kemplab/pythonabm>`
 
 ::
 
-   pip setup.py install
+   python setup.py install
 
 .. note::
     A CUDA compatible GPU is necessary for enabling the GPU parallelized
