@@ -2,7 +2,7 @@ Installation
 ============
 
 
-Assuming you have Python 3.7-3.10, the PythonABM library can be installed using the following command.
+Assuming you have Python 3.7-3.10, the latest version of the PythonABM library can be installed using the following command.
 
 ::
 
@@ -21,7 +21,7 @@ PythonABM can also be built from `source <https://github.com/kemplab/pythonabm>`
 
 
 CUDA Support
--------------------
+------------
 
 For GPU parallelization, PythonABM requires a CUDA compatible GPU and NVIDIA’s
 CUDA toolkit. If you don’t have the toolkit, download the
