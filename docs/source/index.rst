@@ -15,6 +15,7 @@ ABMs. More information on PythonABM can be found below.
    :align: center
    :width: 400
 
+|
 
 
 .. toctree::
