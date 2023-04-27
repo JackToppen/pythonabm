@@ -189,7 +189,7 @@ class Simulation(ABC):
         """
         # get graph object reference and if desired, remove all existing edges in the graph
         if clear:
-            graph.delete_edges(None)
+            graph.delete_edges()
 
         # don't proceed if no agents present
         if self.number_agents == 0:
