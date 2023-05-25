@@ -26,7 +26,7 @@ pip install pythonabm
 
 PythonABM can also be built from [source](https://github.com/kemplab/pythonabm) once downloaded from GitHub.
 ```
-pip setup.py install
+python setup.py install
 ```
 
 ##

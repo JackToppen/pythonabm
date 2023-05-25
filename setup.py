@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setuptools.setup(
     name="pythonabm",
-    version="0.3.2",
+    version="0.3.3",
     author="Jack Toppen",
     author_email="jtoppen3@gatech.edu",
     description="Framework for building Agent-Based Models (ABMs) in Python",
@@ -13,6 +13,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     packages=["pythonabm"],
     python_requires=">=3.7",
+    zip_safe=False,
     install_requires=[
         "matplotlib",
         "numpy>=1.11",

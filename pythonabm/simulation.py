@@ -803,3 +803,33 @@ class Simulation(ABC):
                 cls.simulation_mode_3(name, output_dir)    # archive simulation
             else:
                 raise Exception("Mode does not exist!")
+
+
+    @classmethod
+    def make(cls, name, output_dir):
+        """ Creates a new brand new simulation and sets it up for
+            running within a separate script. Would need to call
+            run_simulation() on Simulation instance.
+
+            :param name: The name of the simulation.
+            :param output_dir: Path to simulation output directory.
+            :type name: str
+            :type output_dir: str
+        """
+        # get absolute path and check that the output directory exists
+        output_dir = os.path.abspath(os.path.expanduser(output_dir))
+        output_dir = check_output_dir(output_dir)
+        
+        # make simulation instance, update name, and add paths
+        sim = cls()
+        sim.name = name
+        sim.set_paths(output_dir)
+
+        # copy model files to simulation directory, ignoring __pycache__ files
+        direc_path = sim.main_path + name + "_copy"
+        shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__", os.path.basename(output_dir[:-1])))
+
+        # set up the simulation agents 
+        sim.full_setup()
+
+        return sim
