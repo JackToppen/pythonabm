@@ -807,9 +807,9 @@ class Simulation(ABC):
 
     @classmethod
     def make(cls, name, output_dir):
-        """ Creates a new brand new simulation and sets it up for
-            running within a separate script. Would need to call
-            run_simulation() on Simulation instance.
+        """ Creates a new brand new simulation and partially sets it
+            up for running within a separate script. Would need to
+            call full_setup() and run_simulation() on sim object.
 
             :param name: The name of the simulation.
             :param output_dir: Path to simulation output directory.
@@ -819,7 +819,7 @@ class Simulation(ABC):
         # get absolute path and check that the output directory exists
         output_dir = os.path.abspath(os.path.expanduser(output_dir))
         output_dir = check_output_dir(output_dir)
-        
+
         # make simulation instance, update name, and add paths
         sim = cls()
         sim.name = name
@@ -828,8 +828,5 @@ class Simulation(ABC):
         # copy model files to simulation directory, ignoring __pycache__ files
         direc_path = sim.main_path + name + "_copy"
         shutil.copytree(os.getcwd(), direc_path, ignore=shutil.ignore_patterns("__pycache__", os.path.basename(output_dir[:-1])))
-
-        # set up the simulation agents 
-        sim.full_setup()
 
         return sim
