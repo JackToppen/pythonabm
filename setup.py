@@ -7,7 +7,6 @@ setuptools.setup(
     name="pythonabm",
     version="0.3.3",
     author="Jack Toppen",
-    author_email="jtoppen3@gatech.edu",
     description="Framework for building Agent-Based Models (ABMs) in Python",
     long_description=long_description,
     long_description_content_type='text/markdown',
