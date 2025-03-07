@@ -20,7 +20,7 @@ for constructing ABMs. More information on PythonABM can be found below.
 
 ## 
 ### Installation
-Assuming you have Python 3.7-3.10, the latest version of the PythonABM library can be installed using the following command.
+Assuming you have Python 3.7-3.13, the latest version of the PythonABM library can be installed using the following command.
 ```
 pip install pythonabm
 ```
