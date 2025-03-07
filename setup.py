@@ -1,11 +1,11 @@
 import setuptools
 
-with open('README.md') as f:
+with open("README.md") as f:
     long_description = f.read()
 
 setuptools.setup(
     name="pythonabm",
-    version="0.3.4",
+    version="0.3.3",
     author="Jack Toppen",
     author_email="jtoppen3@gatech.edu",
     description="Framework for building Agent-Based Models (ABMs) in Python",
